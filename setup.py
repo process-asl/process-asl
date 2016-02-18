@@ -1,29 +1,97 @@
+#! /usr/bin/env python
+
+descr = """Arterial Spin Labeling image processing in python."""
+
+import sys
 import os
-from setuptools import setup
+import shutil
 
-# Utility function to read the README file.
-# Used for the long_description.  It's nice, because now 1) we have a top level
-# README file and 2) it's easier to type in the README file than to put a raw
-# string in below ...
+DISTNAME = 'pypreprocess'
+DESCRIPTION = 'Arterial Spin Labeling image processing in python'
+LONG_DESCRIPTION = open('README.md').read()
+URL = 'https://github.com/process-asl/process-asl'
+LICENSE = 'new BSD'
+DOWNLOAD_URL = 'https://github.com/process-asl/process-asl'
+VERSION = '0.1-git'
+
+from numpy.distutils.core import setup
 
 
-def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+# For some commands, use setuptools
+if len(set(('develop', 'sdist', 'release', 'bdist_egg', 'bdist_rpm',
+           'bdist', 'bdist_dumb', 'bdist_wininst', 'install_egg_info',
+           'build_sphinx', 'egg_info', 'easy_install', 'upload',
+            )).intersection(sys.argv)) > 0:
+    from setuptools import setup
 
-setup(
-    name="procasl",
-    version="alpha",
-    author="Salma Bougacha",
-    author_email="salmabougacha@hotmail.com",
-    description=("Arterial Spin Labeling image processing in python."),
-    license="BSD",
-    keywords="Arterial Spin Labeling",
-    url="https://github.com/salma1601/process-asl",
-    packages=['procasl', ],
-    long_description=read('README.md'),
-    classifiers=[
-        "Development Status :: 1 - Planning",
-        "Topic :: Utilities",
-        "License :: OSI Approved :: BSD License",
-    ],
-)
+
+def configuration(parent_package='', top_path=None):
+    if os.path.exists('MANIFEST'):
+        os.remove('MANIFEST')
+
+    from numpy.distutils.misc_util import Configuration
+    config = Configuration(None, parent_package, top_path)
+
+    # main modules
+    config.add_subpackage('procasl')
+
+    return config
+
+
+if __name__ == "__main__":
+
+    old_path = os.getcwd()
+    local_path = os.path.dirname(os.path.abspath(sys.argv[0]))
+    # python 3 compatibility stuff.
+    # Simplified version of scipy strategy: copy files into
+    # build/py3k, and patch them using lib2to3.
+    if sys.version_info[0] == 3:
+        try:
+            import lib2to3cache
+        except ImportError:
+            pass
+        local_path = os.path.join(local_path, 'build', 'py3k')
+        if os.path.exists(local_path):
+            shutil.rmtree(local_path)
+        print("Copying source tree into build/py3k for 2to3 transformation"
+              "...")
+        shutil.copytree(os.path.join(old_path, 'pypreprocess'),
+                        os.path.join(local_path, 'pypreprocess'))
+        import lib2to3.main
+        from io import StringIO
+        print("Converting to Python3 via 2to3...")
+        _old_stdout = sys.stdout
+        try:
+            sys.stdout = StringIO()  # supress noisy output
+            res = lib2to3.main.main("lib2to3.fixes",
+                                    ['-x', 'import', '-w', local_path])
+        finally:
+            sys.stdout = _old_stdout
+
+        if res != 0:
+            raise Exception('2to3 failed, exiting ...')
+
+    os.chdir(local_path)
+    sys.path.insert(0, local_path)
+
+    setup(configuration=configuration,
+          name=DISTNAME,
+          include_package_data=True,
+          description=DESCRIPTION,
+          license=LICENSE,
+          url=URL,
+          version=VERSION,
+          download_url=DOWNLOAD_URL,
+          long_description=LONG_DESCRIPTION,
+          zip_safe=False,  # the package can run out of an .egg file
+          classifiers=[
+              'Intended Audience :: Science/Research',
+              'Intended Audience :: Developers',
+              'License :: OSI Approved',
+              'Programming Language :: C',
+              'Programming Language :: Python',
+              'Topic :: Software Development',
+              'Topic :: Scientific/Engineering',
+              'Operating System :: Unix'
+              ]
+          )
