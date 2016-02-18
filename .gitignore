@@ -1,7 +1,8 @@
+*~
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
-*$py.class
 
 # C extensions
 *.so
@@ -43,7 +44,6 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *,cover
-.hypothesis/
 
 # Translations
 *.mo
@@ -53,10 +53,17 @@ coverage.xml
 *.log
 
 # Sphinx documentation
-docs/_build/
+doc/_build/
+doc/modules/generated
+doc/interfaces/generated
+doc/auto_examples/
+doc/tutorials/
 
 # PyBuilder
 target/
 
-#Ipython Notebook
-.ipynb_checkpoints
+# Nifti images
+*.nii
+
+# Matlab files
+*.m
