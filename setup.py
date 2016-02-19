@@ -33,7 +33,7 @@ def configuration(parent_package='', top_path=None):
     config = Configuration(None, parent_package, top_path)
 
     # main modules
-#    config.add_subpackage('procasl')
+    config.add_subpackage('procasl')
 
     return config
 
