@@ -94,6 +94,13 @@ class QuantifyCBF(BaseInterface):
         CBF (ml/100g/min) = 6000 * brain_blood_coef * perfusion *
                             exp(TI / T1b) * (1 - exp(-TR / T1_tissue)) /
                             (2 * label_efficiency * M0 * TI1)
+
+        References
+        ----------
+        Recommended implementation of arterial spin-labeled perfusion MRI for
+        clinical applications: A consensus of the ISMRM perfusion study group
+        and the European consortium for ASL in dementia. David C. Alsop et al.
+        (2015), MRM 73.
         """
         # Load images
         perfusion_image = nibabel.load(self.inputs.perfusion_file)
@@ -101,29 +108,13 @@ class QuantifyCBF(BaseInterface):
         perfusion_affine = perfusion_image.get_affine()
         m0_image = nibabel.load(self.inputs.m0_file)
         m0_data = m0_image.get_data()
-        m0_affine = m0_image.get_affine()
-        t1_data = self.inputs.t1_gm  # as recommended in Alsop 2014
 
-        # Check shapes and affines  # TODO: replace with check_images
-        if np.any(m0_affine != perfusion_affine):
-            print np.max(np.abs(perfusion_affine - m0_affine))
-            raise ValueError('affine for {0}: {1}, for {2}:'
-                             ' {3}'.format(self.inputs.m0_file,
-                                           m0_affine,
-                                           self.inputs.perfusion_file,
-                                           perfusion_affine))
-
-        if m0_data.shape != perfusion_data.shape:
-            raise ValueError('Perfusion and M0 have different shapes.'
-                             '{0} of shape {1}, {2} of shape {3}. Resampling'
-                             ' is needed.'.format(self.inputs.m0_file,
-                                                  m0_data.shape,
-                                                  self.inputs.perfusion_file,
-                                                  perfusion_data.shape))
+        # Check shapes and affines
+        check_images(perfusion_image, m0_image)
 
         # Compute the CBF
         m0_data = m0_data.astype(float)
-        m0_data = m0_data / (1. - np.exp(- self.inputs.tr / t1_data))
+        m0_data = m0_data / (1. - np.exp(- self.inputs.tr / self.inputs.t1_gm))
         non_zero_m0 = np.abs(m0_data) > 1e-4
         brain_blood_coef = 0.9  # brain blood partition coefficient, in mL/g
         unit_scaling = 6000.  # from ml/g/s to ml/100g/min
