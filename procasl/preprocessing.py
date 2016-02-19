@@ -216,7 +216,7 @@ class RescaleOutputSpec(TraitedSpec):
 
 
 class Rescale(BaseInterface):
-    """Correct for T1 relaxation between different slices. 
+    """Correct for T1 relaxation between different slices.
 
     PASL images are acquired in EPI single shot with slices from
     bottom to up of the brain.

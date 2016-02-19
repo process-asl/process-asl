@@ -3,14 +3,14 @@ from math import pi, sin, cos, asin, atan2
 from scipy import linalg
 
 
-def rotation_matrix(angle):
+def _rotation_matrix(angle):
     """Returns (2, 2) rotation matrix for a given angle."""
     rotation = np.array([[cos(angle), sin(angle)],
                          [-sin(angle), cos(angle)]])
     return rotation
 
 
-def insure_trigo(x):
+def _insure_trigo(x):
     return np.minimum(np.maximum(x, -1), 1)
 
 
@@ -36,15 +36,15 @@ def params_to_affine(params):
 
     if params.shape != (12, ):
         raise ValueError('Expected 1D array of size 12, got array '
-                         'of shape {}'.format(params.shape))
+                         'of shape {0}'.format(params.shape))
 
     # Compute the (3, 3) rotation matrix
     pitch = np.eye(3)
     roll = np.eye(3)
     yaw = np.eye(3)
-    pitch[1:, 1:] = rotation_matrix(params[3])
-    roll[np.ix_([0, 2], [0, 2])] = rotation_matrix(params[4])
-    yaw[:2, :2] = rotation_matrix(params[5])
+    pitch[1:, 1:] = _rotation_matrix(params[3])
+    roll[np.ix_([0, 2], [0, 2])] = _rotation_matrix(params[4])
+    yaw[:2, :2] = _rotation_matrix(params[5])
     rotation = pitch.dot(roll).dot(yaw)
 
     # Compute the  (3, 3) zooms matrix
@@ -78,7 +78,7 @@ def affine_to_params(affine):
         and possibly 3 zooms and 3 shears
     """
     if affine.shape != (4, 4):
-        raise ValueError('Expects a (4, 4) array, got {}'.format(
+        raise ValueError('Expects a (4, 4) array, got {0}'.format(
             affine.shape))
 
     params = np.zeros((12,))
@@ -101,17 +101,17 @@ def affine_to_params(affine):
     r = params_to_affine(np.hstack((np.zeros(6,), params[6:])))
     r = r[:3, :3]
     rotation = rotation.dot(np.linalg.inv(r))
-    params[4] = asin(insure_trigo(rotation[0, 2]))
+    params[4] = asin(_insure_trigo(rotation[0, 2]))
     if (abs(params[4]) - pi / 2.) ** 2 < 1e-9:
         params[3] = 0.
-        params[5] = atan2(-insure_trigo(rotation[1, 0]),
-                          insure_trigo((-rotation[2, 0] / rotation[0, 2])))
+        params[5] = atan2(-_insure_trigo(rotation[1, 0]),
+                          _insure_trigo((-rotation[2, 0] / rotation[0, 2])))
     else:
         c = cos(params[4])
-        params[3] = atan2(insure_trigo(rotation[1, 2] / c),
-                          insure_trigo(rotation[2, 2] / c))
-        params[5] = atan2(insure_trigo(rotation[0, 1] / c),
-                          insure_trigo(rotation[0, 0] / c))
+        params[3] = atan2(_insure_trigo(rotation[1, 2] / c),
+                          _insure_trigo(rotation[2, 2] / c))
+        params[5] = atan2(_insure_trigo(rotation[0, 1] / c),
+                          _insure_trigo(rotation[0, 0] / c))
     return params
 
 
