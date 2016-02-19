@@ -6,7 +6,6 @@ from scipy.io import savemat
 import nibabel
 import nipype.interfaces.spm as spm
 from nipype.interfaces import fsl
-fsl.FSLCommand.set_default_output_type('NIFTI')
 from nipype.interfaces.base import BaseInterface, \
     BaseInterfaceInputSpec, traits, File, TraitedSpec, Directory
 from nipype.utils.filemanip import split_filename
@@ -14,6 +13,7 @@ from nipype.interfaces.base import InputMultiPath, OutputMultiPath
 
 from procasl.spm_internals import params_to_affine, spm_affine
 from procasl._utils import check_images
+fsl.FSLCommand.set_default_output_type('NIFTI')
 
 
 def add_prefix(prefix, in_file):
@@ -38,17 +38,48 @@ def add_prefix(prefix, in_file):
 
 
 def get_scans_number(in_file):
-    """Return the number of scans for a 4D image."""
+    """Return the number of scans for a 4D image.
+
+    Parameters
+    ----------
+    in_file : str
+        Input file name.
+
+    Returns
+    -------
+    int
+        Number of scans.
+    """
     image = nibabel.load(in_file)
     data = image.get_data()
     if data.ndim != 4:
-        raise ValueError("Expect a 4D image, got a {}D".format(data.ndim))
+        raise ValueError("Expect a 4D image, got a {0}D".format(data.ndim))
 
     return data.shape[-1]
 
 
-def select_scans(in_file, selected_scans, convert_3d=True, out_file=None):
-    """Save a selected scan volumes from a 4D image."""
+def select_scans(in_file, selected_scans, convert_3d=False, out_file=None):
+    """Save selected scan volumes from a 4D image.
+
+    Parameters
+    ----------
+    in_file : str
+        Path to the 4D image
+
+    selected_scans : list of int
+        Scans to keep.
+
+    convert_3d : bool, optional
+        If True, the image is saved as a 3D nifti image.
+
+    out_file : str or None, optional
+        Path to the extracted image
+
+    Returns
+    -------
+    out_file : str
+        Path to the extracted image
+    """
     image = nibabel.load(in_file)
     data = image.get_data()
     data = data[..., selected_scans]
@@ -63,29 +94,46 @@ def select_scans(in_file, selected_scans, convert_3d=True, out_file=None):
     return out_file
 
 
-def save_first_scan(asl_file, out_file=None):
+def save_first_scan(in_file, out_file=None):
+    """Save first volume from a 4D image.
+
+    Parameters
+    ----------
+    in_file : str
+        Path to the 4D image
+
+    out_file : str or None, optional
+        Path to the out image
+
+    Returns
+    -------
+    out_file : str
+        Path to the out image
+    """
     if out_file is None:
-        out_file = os.path.join(os.path.dirname(asl_file),
-                                'm0_' + os.path.basename(asl_file))
-    out_file = select_scans(asl_file, [0], convert_3d=True,
+        out_file = os.path.join(os.path.dirname(in_file),
+                                'first_volume_' + os.path.basename(in_file))
+    out_file = select_scans(in_file, [0], convert_3d=True,
                             out_file=out_file)
-    return out_file
-
-
-def compute_mask(in_file, out_file=None):
-    """Compute a brain mask from a 4D or a3D image."""
-   # TODO: use nipy ComputeMask
-    from nilearn.masking import compute_epi_mask
-    mask_image = compute_epi_mask(in_file)
-    if out_file is None:
-        out_file = add_prefix('brain_mask_', in_file)
-
-    nibabel.save(mask_image, out_file)
     return out_file
 
 
 def compute_brain_mask(in_file, frac=0.5):
     """Computes binary brain mask using FSL BET.
+
+    Parameters
+    ----------
+    in_file : str
+        Path to the 3D image
+
+    frac : float, optional
+        Fractional intensity threshold, smaller values give larger brain
+        outline estimates.
+
+    Returns
+    -------
+    str
+        Path to the brain mask image
     """
     btr = fsl.BET()
     btr.inputs.in_file = in_file
@@ -95,20 +143,26 @@ def compute_brain_mask(in_file, frac=0.5):
     return res.outputs.mask_file
 
 
-def binarize_mask(in_file, threshold=0.5, out_file=None):
-    img = nibabel.load(in_file)
-    data = img.get_data()
-    data[data <= threshold] = 0
-    data[data > threshold] = 1
-    img = nibabel.Nifti1Image(data, img.get_affine(), img.get_header())
-    if out_file is None:
-        out_file = add_prefix('bin_', in_file)
-    nibabel.save(img, out_file)
-    return out_file
-
-
-def apply_mask(in_file, mask_file, mask_value=np.nan):
+def apply_mask(in_file, mask_file, mask_value=np.nan, out_file=None):
     """Masks input with a binary mask_file.
+    Parameters
+    ----------
+    in_file : str
+        Path to the 3D image
+
+    mask_file : str
+        Path to the binary mask image
+
+    mask_value : float, optional
+        Value to allocate to masked voxels.
+
+    out_file : str or None, optional
+        Path to the masked image
+
+    Returns
+    -------
+    out_file : str
+        Path to the masked image
     """
     # Load images
     image = nibabel.load(in_file)
@@ -123,7 +177,9 @@ def apply_mask(in_file, mask_file, mask_value=np.nan):
     data[mask_data == 0] = mask_value
     out_image = nibabel.Nifti1Image(data, image.get_affine(),
                                     image.get_header())
-    out_file = add_prefix('masked_', in_file)
+    if out_file is None:
+        out_file = add_prefix('masked_', in_file)
+
     nibabel.save(out_image, out_file)
     return out_file
 
@@ -133,7 +189,7 @@ class RescaleInputSpec(BaseInterfaceInputSpec):
         exists=True,
         mandatory=True,
         copyfile=True,
-        desc='list of images filenames to rescale')
+        desc='image filename to rescale')
     ss_tr = traits.Float(
         mandatory=True,
         desc='Single slice repetition time, in ms')
@@ -143,7 +199,7 @@ class RescaleInputSpec(BaseInterfaceInputSpec):
     t_i_2 = traits.Float(
         mandatory=True,
         desc='Inversion time (time from the application of the labeling'
-             'pulse to image acquisition, Aslop 2014), in ms')
+             'pulse to image acquisition), in ms')
     t1_blood = traits.Float(
         1650.,
         usedefault=True,
@@ -155,23 +211,20 @@ class RescaleInputSpec(BaseInterfaceInputSpec):
 
 
 class RescaleOutputSpec(TraitedSpec):
-    rescaled_file = OutputMultiPath(
-        traits.Either(traits.List(File(exists=True)), File(exists=True)),
-        desc='The rescaled image file')
+    rescaled_file = File(exists=True,
+                         desc='The rescaled image file')
 
 
 class Rescale(BaseInterface):
-    """Correct for T1 relaxation between different slices. This is a
-    reimplementation of the rescaling method of
-    correction_scalefactors_philips_2010.m from the GIN toolbox,
-    courtesy of...
+    """Correct for T1 relaxation between different slices. 
+
     PASL images are acquired in EPI single shot with slices from
     bottom to up of the brain.
     For PASL,
-    CBF (ml/100g/min) = deltaM / (2 * M0b * tao * exp(-TI / T1b) * qTI)
+    CBF (ml/100g/min) = DeltaM / (2 * M0b * tao * exp(-TI / T1b) * qTI)
     and
-    M0b = Rwm * M0WM * exp((1/T2wm-1/T2b)*TE)
-    or M0b=Rcsf*M0csf*exp((1/T2csf-1/T2b)*TE)
+    M0b = Rwm * M0WM * exp((1 / T2wm - 1 / T2b) * TE)
+    or M0b=Rcsf * M0csf * exp((1 / T2csf-1 / T2b) * TE)
     or M0b = MPD / (1 - exp(-TR / T1_tissue)),
     TI is the inversion time for different slice;
     T1b is the constant relaxation time of arterial blood.
@@ -185,21 +238,30 @@ class Rescale(BaseInterface):
     T2csf is 74.9 ms for 3T.
     M0WM means the mean value in an homogenous white matter region, and it
     could be selected by drawing an ROI in the M0 image.
-    Please refer to: 1) Buxton et al, 1998 MRM 40:383-96, 2) Warmuth C.,
-    Gunther M. and Zimmer G. Radiology, 2003; 228:523-532.
-    Note (Nov 19 2010): T2wm and T2b at 3T were changed to 44.7 and 43.6,
+    T2wm and T2b at 3T were set to 44.7 and 43.6,
     T2csf if used was set to 74.9 according to Cavusoglu 09 MRI
+
+    Notes
+    -----
+    This is a reimplementation of the rescaling method of
+    correction_scalefactors_philips_2010.m from the GIN toolbox,
+    courtesy of Jan Warnking.
+
+    References
+    ----------
+    Buxton et al, 1998 MRM 40:383-96.
+    Warmuth C., Gunther M. and Zimmer G. Radiology, 2003; 228:523-532.
 
     Examples
     --------
-    from procasl.preprocessing as asl
-    rescale = asl.Rescale
+    from procasl import preprocessing
+    rescale = preprocessing.Rescale
     rescale.inputs.in_file = 'raw_asl.nii'
     rescale.inputs.ss_tr = 35.
     rescale.inputs.t_i_1 = 800.
     rescale.inputs.t_i_2 = 1800.
     out_rescale = rescale.run()
-    print(out_rescale.rescaleed files)
+    print(out_rescale.rescaled files)
     """
     input_spec = RescaleInputSpec
     output_spec = RescaleOutputSpec
@@ -240,9 +302,8 @@ class AverageInputSpec(BaseInterfaceInputSpec):
 
 
 class AverageOutputSpec(TraitedSpec):
-    mean_image = OutputMultiPath(
-        traits.Either(traits.List(File(exists=True)), File(exists=True)),
-        desc='The average image file')
+    mean_image = File(exists=True,
+                      desc='The average image file')
 
 
 class Average(BaseInterface):
@@ -282,7 +343,7 @@ class RealignInputSpec(BaseInterfaceInputSpec):
         exists=True,
         mandatory=True,
         copyfile=True,
-        desc='The filename of the input functional ASL 4D image.')
+        desc='The filename of the input ASL 4D image.')
     paths = InputMultiPath(Directory(exists=True),
                            desc='Paths to add to matlabpath')
     register_to_mean = traits.Bool(
@@ -306,16 +367,15 @@ class RealignInputSpec(BaseInterfaceInputSpec):
 
 
 class RealignOutputSpec(TraitedSpec):
-    realigned_files = OutputMultiPath(
-        traits.Either(traits.List(File(exists=True)), File(exists=True)),
-        desc='The resliced files')
+    realigned_files = File(exists=True,
+                           desc='The resliced files')
     realignment_parameters = OutputMultiPath(
         File(exists=True),
         desc='Estimated translation and rotation parameters')
 
 
 class Realign(BaseInterface):
-    """Realign functional scans. Default parameters are those of the GIN
+    """Realign ASL scans. Default parameters are those of the GIN
     pipeline.
 
     Notes
@@ -325,8 +385,8 @@ class Realign(BaseInterface):
 
     Examples
     --------
-    import procasl.preprocessing as asl
-    realign = asl.Realign
+    from procasl import preprocessing
+    realign = preprocessing.Realign
     realign.inputs.in_file = 'functional.nii'
     realign.inputs.register_to_mean = False
     realign.inputs.correct_tagging = True
@@ -388,8 +448,6 @@ class Realign(BaseInterface):
             realign.run()
 
         # Reslice and save the aligned volumes
-        # TODO: update Realign class in nipype.interfaces.spm.preprocess after
-        # bug is corrected
         realign = spm.Realign()
         realign.inputs.paths = self.inputs.paths
         realign.inputs.in_files = self.inputs.in_file
@@ -408,7 +466,7 @@ class Realign(BaseInterface):
         return outputs
 
 
-class GetM0InputSpec(BaseInterfaceInputSpec):
+class GetFirstScanInputSpec(BaseInterfaceInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
@@ -416,17 +474,17 @@ class GetM0InputSpec(BaseInterfaceInputSpec):
         desc='The input 4D ASL image filename')
 
 
-class GetM0OutputSpec(TraitedSpec):
+class GetFirstScanOutputSpec(TraitedSpec):
     m0_file = File(
         exists=True,
         desc='The first scan image filename')
 
 
-class GetM0(BaseInterface):
-    """Save the M0 scan from ASL 4D image (first scan).
+class GetFirstScan(BaseInterface):
+    """Save the first scan from 4D image (M0).
     """
-    input_spec = GetM0InputSpec
-    output_spec = GetM0OutputSpec
+    input_spec = GetFirstScanInputSpec
+    output_spec = GetFirstScanOutputSpec
 
     def _run_interface(self, runtime):
         # Save first scan
@@ -448,7 +506,7 @@ class GetM0(BaseInterface):
         return outputs
 
 
-class GetTagControlInputSpec(BaseInterfaceInputSpec):
+class RemoveFirstScanInputSpec(BaseInterfaceInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
@@ -456,17 +514,17 @@ class GetTagControlInputSpec(BaseInterfaceInputSpec):
         desc='The input 4D ASL image filename')
 
 
-class GetTagControlOutputSpec(TraitedSpec):
+class RemoveFirstScanOutputSpec(TraitedSpec):
     tag_ctl_file = File(
         exists=True,
         desc='The tag/control sequence image filename')
 
 
-class GetTagControl(BaseInterface):
+class RemoveFirstScanControl(BaseInterface):
     """Save the tag/control sequence of a 4D ASL image (removes first scan).
     """
-    input_spec = GetTagControlInputSpec
-    output_spec = GetTagControlOutputSpec
+    input_spec = RemoveFirstScanInputSpec
+    output_spec = RemoveFirstScanOutputSpec
 
     def _run_interface(self, runtime):
         # Remove first scan

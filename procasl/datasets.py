@@ -18,10 +18,10 @@ def _single_glob(pattern):
     """
     filenames = glob.glob(pattern)
     if not filenames:
-        raise ValueError('Non exitant file with pattern {}'.format(pattern))
+        raise ValueError('Non exitant file with pattern {0}'.format(pattern))
 
     if len(filenames) > 1:
-        raise ValueError('Non unique file with pattern {}'.format(pattern))
+        raise ValueError('Non unique file with pattern {0}'.format(pattern))
 
     return filenames[0]
 

@@ -65,7 +65,7 @@ def threshold(in_file, threshold_min=-1e7, threshold_max=1e7, out_file=None):
     threshold_max : float or None, optional
         Values greater than this threshold are set to it.
 
-    out_file : str, optional
+    out_file : str or None, optional
         Path to the thresholded image
 
     Returns
