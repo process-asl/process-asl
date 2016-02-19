@@ -1,1 +1,1 @@
-from . import datasets
+from procasl import datasets

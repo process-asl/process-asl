@@ -116,7 +116,8 @@ def test_params_to_affine():
     np.testing.assert_allclose(spm_internals.params_to_affine(params), affine)
 
     # Test params_to_affine is the inverse of affine_to_params
-    affine2 = params_to_affine(spm_internals.affine_to_params(affine))
+    affine2 = spm_internals.params_to_affine(
+        spm_internals.affine_to_params(affine))
     np.testing.assert_allclose(affine2, affine)
 
     # Test same result as spm_matrix function of spm
