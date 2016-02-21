@@ -27,7 +27,7 @@ def test_get_voxel_dims():
     affine[:, 3] = np.ones(4)
     in_file = '/tmp/file1.nii'
     nibabel.Nifti1Image(data, affine).to_filename(in_file)
-    assert_array_equal(_utils.get_voxels_dim(in_file), [3., 3., 3.])
+    assert_array_equal(_utils.get_voxel_dims(in_file), [3., 3., 3.])
 
 
 def test_threshold():
