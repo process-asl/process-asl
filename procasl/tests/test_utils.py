@@ -21,7 +21,7 @@ def test_check_images():
     assert_raises(ValueError, _utils.check_images, file1, file3)
 
 
-def test_get_voxels_dims():
+def test_get_voxel_dims():
     data = np.zeros((91, 91, 60))
     affine = 3 * np.eye(4)
     affine[:, 3] = np.ones(4)
