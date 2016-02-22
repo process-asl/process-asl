@@ -29,9 +29,9 @@ def _single_glob(pattern):
 def load_heroes_dataset(
     subjects=None,
     subjects_parent_directory='/volatile/asl_data/heroes/raw',
-    dataset_pattern={'anat': 't1mri/acquisition1/anat*.nii',
-                     'basal ASL': 'fMRI/acquisition1/basal_rawASL*.nii',
-                     'basal CBF': 'B1map/acquisition1/basal_relCBF*.nii'}
+    paths_patterns={'anat': 't1mri/acquisition1/anat*.nii',
+                    'basal ASL': 'fMRI/acquisition1/basal_rawASL*.nii',
+                    'basal CBF': 'B1map/acquisition1/basal_relCBF*.nii'}
         ):
     """Loads the NeuroSpin HEROES dataset.
 
@@ -43,7 +43,7 @@ def load_heroes_dataset(
     subjects_parent_directory : str, optional
         Path to the dataset folder containing all subjects folders.
 
-    dataset_pattern : dict, optional
+    paths_patterns : dict, optional
         Input dictionary. Keys are the names of the images to load, values
         are strings specifying the unique relative pattern specifying the
         path to these images within each subject directory.
@@ -73,7 +73,7 @@ def load_heroes_dataset(
 
     # Build the path list for each image type
     dataset = {}
-    for (image_type, file_pattern) in dataset_pattern.iteritems():
+    for (image_type, file_pattern) in paths_patterns.iteritems():
         dataset[image_type] = []
         for subject_dir in subjects_directories:
             dataset[image_type].append(

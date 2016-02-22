@@ -32,7 +32,7 @@ def check_images(file1, file2):
                                                      file2, affine2))
 
 
-def get_voxels_dim(in_file):
+def get_voxel_dims(in_file):
     """Return the voxels resolution of a nifti image.
 
     Parameters

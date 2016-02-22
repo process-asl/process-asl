@@ -110,7 +110,7 @@ class QuantifyCBF(BaseInterface):
         m0_data = m0_image.get_data()
 
         # Check shapes and affines
-        check_images(perfusion_image, m0_image)
+        check_images(self.inputs.perfusion_file, self.inputs.m0_file)
 
         # Compute the CBF
         m0_data = m0_data.astype(float)

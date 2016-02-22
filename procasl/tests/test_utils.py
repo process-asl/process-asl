@@ -21,13 +21,13 @@ def test_check_images():
     assert_raises(ValueError, _utils.check_images, file1, file3)
 
 
-def test_get_voxels_dims():
+def test_get_voxel_dims():
     data = np.zeros((91, 91, 60))
     affine = 3 * np.eye(4)
     affine[:, 3] = np.ones(4)
     in_file = '/tmp/file1.nii'
     nibabel.Nifti1Image(data, affine).to_filename(in_file)
-    assert_array_equal(_utils.get_voxels_dim(in_file), [3., 3., 3.])
+    assert_array_equal(_utils.get_voxel_dims(in_file), [3., 3., 3.])
 
 
 def test_threshold():

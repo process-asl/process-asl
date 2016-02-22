@@ -16,7 +16,7 @@ from procasl._utils import check_images
 fsl.FSLCommand.set_default_output_type('NIFTI')
 
 
-def add_prefix(prefix, in_file):
+def _add_prefix(prefix, in_file):
     """Adds a prefix to a filename
 
     Parameters
@@ -88,7 +88,7 @@ def select_scans(in_file, selected_scans, convert_3d=False, out_file=None):
 
     image = nibabel.Nifti1Image(data, image.get_affine(), image.get_header())
     if out_file is None:
-        out_file = add_prefix('subscans_', in_file)
+        out_file = _add_prefix('subscans_', in_file)
 
     nibabel.save(image, out_file)
     return out_file
@@ -178,7 +178,7 @@ def apply_mask(in_file, mask_file, mask_value=np.nan, out_file=None):
     out_image = nibabel.Nifti1Image(data, image.get_affine(),
                                     image.get_header())
     if out_file is None:
-        out_file = add_prefix('masked_', in_file)
+        out_file = _add_prefix('masked_', in_file)
 
     nibabel.save(out_image, out_file)
     return out_file
@@ -280,7 +280,7 @@ class Rescale(BaseInterface):
                                     data.shape[-1]))
         data = data * scaling
         img = nibabel.Nifti1Image(data, img.get_affine(), img.get_header())
-        out_file = add_prefix('sc_', self.inputs.in_file)
+        out_file = _add_prefix('sc_', self.inputs.in_file)
         nibabel.save(img, out_file)
         return runtime
 
