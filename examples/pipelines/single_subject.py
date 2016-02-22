@@ -1,10 +1,9 @@
 """
-=========================
-One subject pipeline demo
-=========================
+====================
+One subject pipeline
+====================
 
-This example gives a basic single subject pipeline for computing CBF from
-ASL data.
+A basic single subject pipeline for computing CBF from ASL data.
 """
 # Give the path to the 4D ASL and anatomical images
 import os
@@ -13,8 +12,9 @@ heroes = datasets.load_heroes_dataset(
     subjects=(0,),
     subjects_parent_directory=os.path.join(
         os.path.expanduser('~/procasl_data'), 'heroes'),
-    dataset_pattern={'anat': 't1mri/acquisition1/anat*.nii',
-                     'basal ASL': 'fMRI/acquisition1/basal_rawASL*.nii'})
+    paths_patterns={'anat': 't1mri/acquisition1/anat*.nii',
+                    'basal ASL': 'fMRI/acquisition1/basal_rawASL*.nii',
+                    'basal CBF': 'fMRI/acquisition1/basal_relCBF*.nii'})
 asl_file = heroes['basal ASL'][0]
 anat_file = heroes['anat'][0]
 
@@ -114,10 +114,18 @@ cbf_map = preprocessing.apply_mask(out_quantify.outputs.cbf_file,
 # Plot CBF map on top of anat
 import matplotlib.pylab as plt
 from nilearn import plotting
-plotting.plot_stat_map(
-    cbf_map,
-    bg_img=out_coregister_anat.outputs.coregistered_source,
-    threshold=.1, vmax=150.,
-    display_mode='z')
+cut_coords = (-15, 0, 15, 45, 60, 75,)
+min_cbf = 1.
+max_cbf = 150.
+for map_to_plot, title, vmax, threshold in zip(
+    [cbf_map, heroes['basal CBF'][0]], ['pipeline CBF', 'scanner CBF'],
+    [max_cbf, max_cbf * 10],  # scanner CBF maps are scaled
+    [min_cbf, min_cbf * 10]):
+    plotting.plot_stat_map(
+        map_to_plot,
+        bg_img=out_coregister_anat.outputs.coregistered_source,
+        threshold=threshold, vmax=vmax, cut_coords=cut_coords,
+        display_mode='z', title=title)
+
 plt.show()
 os.chdir(current_directory)

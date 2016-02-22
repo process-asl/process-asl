@@ -21,8 +21,8 @@ subjects_parent_directory = os.path.join(os.path.expanduser('~/procasl_data'),
 heroes = datasets.load_heroes_dataset(
     subjects=(0, 4, 9),
     subjects_parent_directory=subjects_parent_directory,
-    dataset_pattern={'anat': 't1mri/acquisition1/anat*.nii',
-                     'BOLD EPI': 'fMRI/acquisition1/vismot1_BOLDepi*.nii'})
+    paths_patterns={'anat': 't1mri/acquisition1/anat*.nii',
+                    'BOLD EPI': 'fMRI/acquisition1/vismot1_BOLDepi*.nii'})
 current_directory = os.getcwd()
 
 # Loop over subjects

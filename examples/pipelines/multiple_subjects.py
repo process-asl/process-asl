@@ -1,9 +1,9 @@
 """
-===============================
-Multiple subjects pipeline demo
-===============================
+==========================
+Multiple subjects pipeline
+==========================
 
-A basic multiple subjects pipeline. CBF maps are normalized to
+A basic multiple subjects pipeline for ASL. CBF maps are normalized to
 the reference MNI template.
 """
 import os
@@ -22,8 +22,8 @@ subjects_parent_directory = os.path.join(os.path.expanduser('~/procasl_data'),
 heroes = datasets.load_heroes_dataset(
     subjects=(0, 1),
     subjects_parent_directory=subjects_parent_directory,
-    dataset_pattern={'anat': 't1mri/acquisition1/anat*.nii',
-                     'basal ASL': 'fMRI/acquisition1/basal_rawASL*.nii'})
+    paths_patterns={'anat': 't1mri/acquisition1/anat*.nii',
+                    'basal ASL': 'fMRI/acquisition1/basal_rawASL*.nii'})
 current_directory = os.getcwd()
 
 # Loop over subjects

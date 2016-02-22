@@ -6,7 +6,7 @@ Gallery of Examples
 
 .. _general_examples:
 
-General examples
-----------------
+Basic preprocessing steps
+-------------------------
 
-General-purpose and introductory examples from the sphinx-gallery
+Examples for each preprocessing step

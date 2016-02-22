@@ -6,14 +6,14 @@ Coregistration demo
 This example shows a basic coregistration step from anatomical to mean
 functional.
 """
-# Give the path to the 4D ASL and anatomical images
+# Load functional ASL and anatomical images of HEROES dataset first subject
 import os
 from procasl import datasets
 heroes = datasets.load_heroes_dataset(
     subjects=(0,),
     subjects_parent_directory=os.path.join(
         os.path.expanduser('~/procasl_data'), 'heroes'),
-    dataset_pattern={'anat': 't1mri/acquisition1/anat*.nii',
+    paths_patterns={'anat': 't1mri/acquisition1/anat*.nii',
                      'raw ASL': 'fMRI/acquisition1/vismot1_rawASL*.nii'})
 raw_asl_file = heroes['raw ASL'][0]
 
