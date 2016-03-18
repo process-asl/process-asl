@@ -20,7 +20,7 @@ setup(
     keywords="Arterial Spin Labeling",
     url="https://github.com/process-asl/process-asl",
     packages=['procasl', ],
-    long_description=read('README.rst'),
+    long_description=read('README.md'),
     classifiers=[
         "Topic :: Scientific/Engineering",
         "License :: OSI Approved :: BSD License",
