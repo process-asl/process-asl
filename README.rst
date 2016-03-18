@@ -2,7 +2,7 @@
 process-asl
 ===========
 
-Procasl builds relevant **pipelines** for processing Arterial Spin Labeling data.
+Process-asl builds relevant **pipelines** for processing Arterial Spin Labeling data.
 For the moment, it is dedicated to pulsed ASL.
 
 Dependencies
