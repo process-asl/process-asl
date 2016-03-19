@@ -36,10 +36,10 @@ extensions = ['sphinx.ext.autodoc',
 #    'sphinx.ext.todo',
 #    'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
-#    'numpydoc.numpydoc',
+#    'numpydoc.numpydoc',  # removed for build
 #    'numpy_ext.numpydoc',
-    'IPython.sphinxext.ipython_directive',
-    'IPython.sphinxext.ipython_console_highlighting',
+#    'IPython.sphinxext.ipython_directive',  # removed for build
+#    'IPython.sphinxext.ipython_console_highlighting',  # removed for build
     'sphinx_gallery.gen_gallery']
 
 numpydoc_show_class_members = False
