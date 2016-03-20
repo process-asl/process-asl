@@ -1,0 +1,5 @@
+setuptools
+matplotlib
+pillow
+sphinx
+nose
