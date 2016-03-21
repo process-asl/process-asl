@@ -6,3 +6,5 @@ numpy == 1.10.4
 setuptools == 3.3
 nilearn == 0.2.3
 scipy
+numpydoc>=0.5
+ipython
