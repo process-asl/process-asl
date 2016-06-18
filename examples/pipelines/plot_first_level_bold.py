@@ -6,14 +6,14 @@ First level model demo
 A basic first level model for BOLD data.
 """
 
-# Give the paths to the BOLD EPI and anatomical images
+# Give the paths to normalized BOLD EPI and anatomical
 import os
 from procasl import datasets
-subjects_parent_directory = os.path.join(os.path.expanduser('~/CODE/process-asl'),
-                        'procasl_cache/heroes')
+subjects = (3,)
 preprocessed_heroes = datasets.load_heroes_dataset(
-    subjects=(3,),
-    subjects_parent_directory=subjects_parent_directory,
+    subjects=subjects,
+    subjects_parent_directory=os.path.expanduser(
+        '~/CODE/process-asl/procasl_cache/heroes'),
     paths_patterns={'anat': 'nipype_mem/*Normalize/*/wanat*.nii',
                     'func BOLD': 'nipype_mem/*Smooth/*/swrvismot1*.nii'})
 func_file = preprocessed_heroes['func BOLD'][0]
@@ -21,7 +21,7 @@ anat_file = preprocessed_heroes['anat'][0]
 
 # Give the path to the paradigm
 heroes = datasets.load_heroes_dataset(
-    subjects=(3,),
+    subjects=subjects,
     subjects_parent_directory=os.path.join(
         os.path.expanduser('~/procasl_data'), 'heroes'),
     paths_patterns={'paradigm': 'paradigms/acquisition1/*BOLD*1b.csv'})
@@ -59,7 +59,7 @@ for n, name in enumerate(design_matrix.columns[:3]):
 contrasts['[motor audio] left - right'] = \
     contrasts['motor_audio_left'] - contrasts['motor_audio_right']
 
-# compute contrast maps
+# Compute contrast maps
 from nilearn import plotting
 for contrast_id, contrast_val in contrasts.items():
     z_map = fmri_glm.compute_contrast(
