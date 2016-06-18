@@ -15,7 +15,7 @@ preprocessed_heroes = datasets.load_heroes_dataset(
     subjects_parent_directory=os.path.expanduser(
         '~/CODE/process-asl/procasl_cache/heroes'),
     paths_patterns={'anat': 'nipype_mem/*Normalize/*/wanat*.nii',
-                    'func BOLD': 'nipype_mem/*Smooth/*/swrvismot1*.nii'})
+                    'func BOLD': 'nipype_mem/*Smooth/*/swrvismot1*BOLD*.nii'})
 func_file = preprocessed_heroes['func BOLD'][0]
 anat_file = preprocessed_heroes['anat'][0]
 
