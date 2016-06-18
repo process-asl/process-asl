@@ -59,7 +59,7 @@ for n, name in enumerate(design_matrix.columns[:3]):
 contrasts['[motor audio] left - right'] = \
     contrasts['motor_audio_left'] - contrasts['motor_audio_right']
 
-# compute contrast maps
+# Compute contrast maps
 from nilearn import plotting
 for contrast_id, contrast_val in contrasts.items():
     z_map = fmri_glm.compute_contrast(
