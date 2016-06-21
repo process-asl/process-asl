@@ -17,14 +17,65 @@ def _get_perfusion_baseline_regressor(n_frames):
     return [regressor.tolist()], ['perfusion_baseline']
 
 
-def _get_perfusion_activation_regressor(condition, onsets, durations,
-                                        amplitudes,
+def _get_perfusion_activation_regressor(condition, condition_name,
                                         hrf_model, frame_times,
                                         oversampling=16,
                                         fir_delays=None, min_onset=-24):
-    exp_condition = (onsets, durations, amplitudes)
+    """
+    Parameters
+    ----------
+    condition : 3-tuple of arrays
+        (onsets, durations, amplitudes)
+
+    condition_name : str
+        name of the condition
+
+    hrf_model : {'spm', 'spm + derivative', 'spm + derivative + dispersion',
+        'glover', 'glover + derivative', 'fir'}
+        Name of the hrf model to be used
+
+    frame_times : array of shape (n_scans)
+        the desired sampling times
+
+    oversampling : int, optional
+        oversampling factor to perform the convolution
+
+    fir_delays : 1D-array-like, optional
+        delays (in seconds) used in case of a finite impulse reponse model
+
+    min_onset : float, optional
+        minimal onset relative to frame_times[0] (in seconds)
+        events that start before frame_times[0] + min_onset are not considered
+
+    Returns
+    -------
+    computed_regressors: array of shape(n_scans, n_reg)
+        computed regressors sampled at frame times
+
+    reg_names: list of strings
+        corresponding regressor names
+
+    Notes
+    -----
+    The different hemodynamic models can be understood as follows:
+    'spm': this is the hrf model used in SPM
+    'spm + derivative': SPM model plus its time derivative (2 regressors)
+    'spm + time + dispersion': idem, plus dispersion derivative (3 regressors)
+    'glover': this one corresponds to the Glover hrf
+    'glover + derivative': the Glover hrf + time derivative (2 regressors)
+    'glover + derivative + dispersion': idem + dispersion derivative
+                                        (3 regressors)
+    'fir': finite impulse response basis, a set of delayed dirac models
+           with arbitrary length. This one currently assumes regularly spaced
+           frame times (i.e. fixed time of repetition).
+    It is expected that spm standard and Glover model would not yield
+    large differences in most cases.
+
+    In case of glover and spm models, the derived regressors are
+    orthogonalized wrt the main one.
+    """
     computed_regressors, reg_names = compute_regressor(
-        exp_condition, hrf_model, frame_times, con_id=condition,
+        condition, hrf_model, frame_times, con_id=condition_name,
         oversampling=oversampling, fir_delays=fir_delays, min_onset=min_onset)
     computed_regressors[:, 1::2] *= .5
     computed_regressors[:, ::2] *= -.5
@@ -32,17 +83,17 @@ def _get_perfusion_activation_regressor(condition, onsets, durations,
     return computed_regressors.T.tolist(), reg_names
 
 
-def compute_perfusion_regressors(conditions, onsets, durations, amplitudes,
+def compute_perfusion_regressors(conditions, condition_names,
                                  hrf_model, frame_times, oversampling=16,
                                  fir_delays=None, min_onset=-24):
     n_frames = frame_times.size
     perfusions_regressors, perfusion_regressors_names = \
         _get_perfusion_baseline_regressor(n_frames)
-    for condition, onset, duration, amplitude in zip(conditions, onsets,
-                                                     durations, amplitudes):
+    for condition, condition_name in zip(conditions, condition_names):
+        print condition
         activation_regressors, activation_regressor_names = \
             _get_perfusion_activation_regressor(
-                condition, onset, duration, amplitude, hrf_model, frame_times,
+                condition, condition_name, hrf_model, frame_times,
                 oversampling=oversampling, fir_delays=fir_delays,
                 min_onset=min_onset)
         perfusions_regressors.extend(activation_regressors)
@@ -225,7 +276,7 @@ class Level1Design(BaseInterface):
                     hrf_model.extend(' + derivative + dispersion')
             else:
                 raise ValueError('physio PRF not implemented yet')
-            conditions = [c['name'] for c in session_info['cond']]  # robustify
+            condition_names = [c['name'] for c in session_info['cond']]  # robustify
             onsets = [c['onset'] for c in session_info['cond']]
             durations = [c['duration'] for c in session_info['cond']]
             if 'amplitude' in session_info['cond'][0].keys():
@@ -233,9 +284,10 @@ class Level1Design(BaseInterface):
             else:
                 amplitudes = [1 for c in session_info['cond']]
 
+            conditions = zip(onsets, durations, amplitudes)
             perfusion_regressors, perfusion_regressor_names = \
-                compute_perfusion_regressors(conditions, onsets, durations,
-                                             amplitudes, hrf_model, frametimes)
+                compute_perfusion_regressors(conditions, condition_names,
+                                             hrf_model, frametimes)
             # Add perfusion regressors to model
             for n, (regressor, regressor_name) in enumerate(
                     zip(perfusion_regressors, perfusion_regressor_names)):
