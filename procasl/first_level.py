@@ -89,7 +89,6 @@ def compute_perfusion_regressors(conditions, condition_names,
     perfusions_regressors, perfusion_regressors_names = \
         _get_perfusion_baseline_regressor(n_frames)
     for condition, condition_name in zip(conditions, condition_names):
-        print condition
         activation_regressors, activation_regressor_names = \
             _get_perfusion_activation_regressor(
                 condition, condition_name, hrf_model, frame_times,
@@ -139,7 +138,7 @@ class Level1DesignInputSpec(BaseInterfaceInputSpec):
                     order : int
                         Number of basis functions
                             """, mandatory=True)
-    perfusion_bases = traits.Enum('bases', 'physio',
+    perfusion_bases = traits.Enum('bases', 'physio', 'none',
         field='perfusion bases', desc="""
         Name of the prf model to be used
                 bases :
@@ -240,8 +239,8 @@ class Level1Design(BaseInterface):
         level1design.inputs.mask_threshold = self.inputs.mask_threshold
         level1design.inputs.model_serial_correlations = \
             self.inputs.model_serial_correlations
-
-        if isdefined(self.inputs.perfusion_bases):
+        perfusion_bases = self.inputs.perfusion_bases
+        if isdefined(perfusion_bases) and perfusion_bases != 'none':
             # Compute perfusion regressors
             tr = self.inputs.interscan_interval
             # TODO: robustify (check session_info type is list of length 1)
@@ -255,7 +254,7 @@ class Level1Design(BaseInterface):
                 
             n_scans = nibabel.load(session_info['scans']).get_data().shape[-1]
             frametimes = np.arange(0, n_scans * tr, tr)
-            if self.inputs.perfusion_bases == 'bases':
+            if perfusion_bases == 'bases':
                 hrf_model = 'spm'
                 if self.inputs.bases['hrf']['derivs'] == [1, 0]:
                     hrf_model.extend(' + derivative')
