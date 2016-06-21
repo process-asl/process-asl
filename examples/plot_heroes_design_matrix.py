@@ -10,7 +10,8 @@ preprocessed_heroes = datasets.load_heroes_dataset(
     subjects_parent_directory=os.path.expanduser(
         '~/CODE/process-asl/procasl_cache/heroes'),
     paths_patterns={'motion': 'nipype_mem/procasl*Realign/*/rp*vismot1*.txt',
-                    'func ASL': 'nipype_mem/*Realign/*/rsc*vismot1*ASL*.nii'})
+                    'func ASL': 'nipype_mem/*Realign/*/rsc*vismot1*ASL*.nii',
+                    'mean ASL':'nipype_mem/*Average/*/mean*rsc*vismot1*.nii'})
 heroes = datasets.load_heroes_dataset(
     subjects=subjects,
     subjects_parent_directory=os.path.join(
@@ -19,6 +20,7 @@ heroes = datasets.load_heroes_dataset(
 func_file = preprocessed_heroes['func ASL'][0]
 realignment_parameters = preprocessed_heroes['motion'][0]
 paradigm_file = heroes['paradigm'][0]
+mean_func_file = preprocessed_heroes['mean ASL'][0]
 
 # Define directory to save .m scripts and outputs to
 subject_directory = os.path.relpath(func_file, subjects_parent_directory)
@@ -52,6 +54,7 @@ out_modelspec = modelspec.run()
 
 # Generate an SPM design matrix
 from procasl.first_level import Level1Design
+from procasl.preprocessing import compute_brain_mask
 spm_mat = os.path.join(os.getcwd(), 'SPM.mat')
 if os.path.isfile(spm_mat):
     os.remove(spm_mat)  # design crashes if existant SPM.mat
@@ -62,7 +65,9 @@ level1design = Level1Design(bases={'hrf': {'derivs': [0, 0]}},
                             interscan_interval=tr,
                             model_serial_correlations='AR(1)')
 
-#level1design.inputs.mask_image = binarize.binary_file
+
+level1design.inputs.mask_image = compute_brain_mask(
+    mean_func_file, frac=.2)  # Compute cut neck mask
 level1design.inputs.session_info = out_modelspec.outputs.session_info
 out_level1design = level1design.run()
 os.chdir(current_directory)
