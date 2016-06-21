@@ -101,26 +101,14 @@ class Level1DesignInputSpec(BaseInterfaceInputSpec):
                     order : int
                         Number of basis functions
                             """, mandatory=True)
-    perfusion_bases = traits.Dict(
-        traits.Enum('hrf', 'physio'),
+    perfusion_bases = traits.Enum('bases', 'physio',
         field='perfusion bases', desc="""
-            dict {'name':{'perfusion_basesparam1':val,...}} (opt)
-            name : string
-                Name of basis function (hrf, physio)
-        {'hrf', 'physio'}
         Name of the prf model to be used
-        
-                hrf :
-                    derivs : 2-element list
-                        Model  spm HRF  Derivatives. No derivatives: [0,0],
-                        Time derivatives : [1,0], Time and Dispersion
-                        derivatives: [1,1]
+                bases :
+                    same as the basis function in bases
                 physio:
-                    length : int
-                        Post-stimulus window length (in seconds)
-                    order : int
-                        Number of basis functions
-                            """, mandatory=False)
+                    linear transformation of the basis function.
+                                     """, mandatory=False)
     volterra_expansion_order = traits.Enum(
         1, 2, field='volt', desc='Model interactions - yes:1, no:2')
     global_intensity_normalization = traits.Enum(
@@ -144,7 +132,13 @@ class Level1DesignOutputSpec(TraitedSpec):
 
 
 class Level1Design(BaseInterface):
-    """Generate an SPM design matrix
+    """Generate an SPM design matrix possibly with perfusion regressors.
+    Perfusion regressors consist of
+        - a baseline blood flow reflecting the presence or absence of the
+        inversion tag
+        - BOLD regressors modulated with the baseline blood flow regressor
+    as described in 'Estimation efficiency and statistical power in arterial
+    spin labeling fMRI'. Mumford J.A. et al., 2006. Neuroimage 33,p. 103-114.
 
     http://www.fil.ion.ucl.ac.uk/spm/doc/manual.pdf#page=59
 
@@ -179,9 +173,11 @@ class Level1Design(BaseInterface):
     def _parse_inputs(self):
         """validate spm realign options if set to None ignore
         """
-        einputs = super(Level1Design, self)._parse_inputs(skip=('mask_threshold'))
+        einputs = super(Level1Design, self)._parse_inputs(
+            skip=('mask_threshold'))
         for sessinfo in einputs[0]['sess']:
-            sessinfo['scans'] = scans_for_fnames(filename_to_list(sessinfo['scans']), keep4d=False)
+            sessinfo['scans'] = scans_for_fnames(filename_to_list(
+                sessinfo['scans']), keep4d=False)
         if not isdefined(self.inputs.spm_mat_dir):
             einputs[0]['dir'] = np.array([str(os.getcwd())], dtype=object)
         return einputs
@@ -221,11 +217,11 @@ class Level1Design(BaseInterface):
                 
             n_scans = nibabel.load(session_info['scans']).get_data().shape[-1]
             frametimes = np.arange(0, n_scans * tr, tr)
-            if self.inputs.perfusion_bases.keys() == ['hrf']:
+            if self.inputs.perfusion_bases == 'bases':
                 hrf_model = 'spm'
-                if self.inputs.perfusion_bases['hrf']['derivs'] == [1, 0]:
+                if self.inputs.bases['hrf']['derivs'] == [1, 0]:
                     hrf_model.extend(' + derivative')
-                elif self.inputs.perfusion_bases['hrf']['derivs'] == [1, 1]:
+                elif self.inputs.bases['hrf']['derivs'] == [1, 1]:
                     hrf_model.extend(' + derivative + dispersion')
             else:
                 raise ValueError('physio PRF not implemented yet')
