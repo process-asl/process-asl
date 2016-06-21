@@ -1,7 +1,6 @@
 import os
 import numpy as np
-from nistats.design_matrix import compute_regressor
-from nistats import experimental_paradigm
+from nistats_hemodynamic_models import compute_regressor
 from nipype.interfaces import spm
 from nipype.interfaces.base import (BaseInterface,
     BaseInterfaceInputSpec, traits, File, TraitedSpec, Directory, isdefined)
