@@ -100,18 +100,6 @@ def compute_perfusion_regressors(conditions, condition_names,
     return perfusions_regressors, perfusion_regressors_names
 
 
-def subject_info_from_csv(paradigm_file):
-    paradigm = experimental_paradigm.paradigm_from_csv(paradigm_file)
-    paradigm = paradigm.groupby(paradigm.name)
-    conditions = paradigm.groups.keys()
-    onsets = [paradigm.get_group(condition).onset.tolist()
-              for condition in conditions]
-    durations = [paradigm.get_group(condition).duration.tolist()
-                 for condition in conditions]
-    amplitudes = [paradigm.get_group(condition).modulation.tolist()
-                  for condition in conditions]
-
-
 class Level1DesignInputSpec(BaseInterfaceInputSpec):
     spm_mat_dir = Directory(
         exists=True, field='dir', desc='directory to store SPM.mat file (opt)')
