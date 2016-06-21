@@ -5,25 +5,34 @@ from __future__ import print_function
 import os
 from procasl import datasets
 current_directory = os.getcwd()
+subjects_parent_directory = os.path.expanduser(
+        '~/CODE/process-asl/procasl_cache/heroes')
 subjects = (3,)
 preprocessed_heroes = datasets.load_heroes_dataset(
     subjects=subjects,
-    subjects_parent_directory=os.path.expanduser(
-        '~/CODE/process-asl/procasl_cache/heroes'),
-    paths_patterns={'func BOLD': 'nipype_mem/*spm*Realign/*/rvismot1*BOLD*.nii',
+    subjects_parent_directory=subjects_parent_directory,
+    paths_patterns={'func BOLD': 'nipype_mem/*spm*Realign/*/rvismot1_BOLD*.nii',
+                    'mean func': 'nipype_mem/*spm*Realign/*/meanvismot1_BOLD*.nii',
                     'motion': 'nipype_mem/*spm*Realign/*/rp*.txt'})
 func_file = preprocessed_heroes['func BOLD'][0]
 realignment_parameters = preprocessed_heroes['motion'][0]
 
+# Create a memory context
+from nipype.caching import Memory
+subject_directory = os.path.relpath(func_file, subjects_parent_directory)
+subject_directory = subject_directory.split(os.sep)[0]
+cache_directory = os.path.join(os.path.expanduser('~/CODE/process-asl'),
+                               'procasl_cache', 'heroes',
+                               subject_directory)
+if not os.path.exists(cache_directory):
+    os.mkdir(cache_directory)
+
+os.chdir(cache_directory)  # nipype saves .m scripts in current directory
+mem = Memory(cache_directory)
+
 #  Generate SPM-specific Model
 from nipype.algorithms.modelgen import SpecifySPMModel
-print('Generate SPM-specific Model ...', end='')
 tr = 2.5
-modelspec = SpecifySPMModel(input_units='secs',
-                            time_repetition=tr,
-                            high_pass_filter_cutoff=128)
-modelspec.inputs.realignment_parameters = realignment_parameters
-modelspec.inputs.functional_runs = func_file
 # Read the paradigm
 from nistats import experimental_paradigm
 from nipype.interfaces.base import Bunch
@@ -40,30 +49,27 @@ onsets = [paradigm.get_group(condition).onset.tolist()
           for condition in conditions]
 durations = [paradigm.get_group(condition).duration.tolist()
              for condition in conditions]
-modelspec.inputs.subject_info = Bunch(conditions=conditions,
-                                      onsets=onsets,
-                                      durations=durations)
-out_modelspec = modelspec.run()
-print('Done.')
+subject_info = Bunch(conditions=conditions, onsets=onsets, durations=durations)
 
-# Remove old SPM.mat
-spm_mat = os.path.join(os.getcwd(), 'SPM.mat')
-if os.path.isfile(spm_mat):
-    print('ok')
-    os.remove(spm_mat)
+modelspec = mem.cache(SpecifySPMModel)        
+out_modelspec = modelspec(input_units='secs',
+                          time_repetition=tr,
+                          high_pass_filter_cutoff=128,
+                          realignment_parameters=realignment_parameters,
+                          functional_runs=func_file,
+                          subject_info=subject_info)
+
+# If cache not used, remove old SPM.mat
+#spm_mat = os.path.join(cache_directory, 'SPM.mat')
 
 # Generate an SPM design matrix
 from nipype.interfaces.spm import Level1Design
-level1design = Level1Design(bases={'hrf': {'derivs': [0, 0]}},
-                            timing_units='secs',
-                            interscan_interval=tr,
-                            model_serial_correlations='AR(1)')
-
-#level1design.inputs.mask_image = binarize.binary_file
-level1design.inputs.session_info = out_modelspec.outputs.session_info
-print('Generate an SPM design matrix ...')
-out_level1design = level1design.run()
-print('Done.')
+level1design = mem.cache(Level1Design)
+out_level1design = level1design(bases={'hrf': {'derivs': [0, 0]}},
+                                timing_units='secs',
+                                interscan_interval=tr,
+                                model_serial_correlations='AR(1)',
+                                session_info=out_modelspec.outputs.session_info)
 
 # Plot the design matrix
 import numpy as np
@@ -85,17 +91,18 @@ plt.xticks(range(len(regressor_names)),
 plt.tight_layout()
 
 # Plot the conditions regressors
+plt.figure()
 for n, (regressor, regressor_name) in enumerate(zip(design_matrix.T[:3],
                                                     regressor_names)):
     plt.plot(regressor, label=regressor_name)
 plt.legend()
-print('Done.')
+
 # Estimate the parameters of the model
 from nipype.interfaces.spm import EstimateModel
-print('Estimate the parameters of the model ...', end='')
-level1estimate = EstimateModel(estimation_method={'Classical': 1})
-level1estimate.inputs.spm_mat_file = out_level1design.outputs.spm_mat_file
-out_level1estimate = level1estimate.run()
+level1estimate = mem.cache(EstimateModel)
+out_level1estimate = level1estimate(
+    estimation_method={'Classical': 1},
+    spm_mat_file = out_level1design.outputs.spm_mat_file)
 
 # Specify contrasts
 cont01 = [conditions[0],   'T', conditions, [1, 0, 0]]
@@ -109,19 +116,21 @@ contrast_list = [cont01, cont02, cont03, cont04, cont05, cont06, cont07]
 
 # Estimate contrasts
 from nipype.interfaces.spm import EstimateContrast
-conestimate = EstimateContrast()
-conestimate.inputs.spm_mat_file = out_level1estimate.outputs.spm_mat_file
-conestimate.inputs.beta_images = out_level1estimate.outputs.beta_images
-conestimate.inputs.residual_image = out_level1estimate.outputs.residual_image
-conestimate.inputs.contrasts = contrast_list
-conestimate = conestimate.run()
+conestimate = mem.cache(EstimateContrast)
+out_conestimate = conestimate(
+    spm_mat_file = out_level1estimate.outputs.spm_mat_file,
+    beta_images = out_level1estimate.outputs.beta_images,
+    residual_image = out_level1estimate.outputs.residual_image,
+    contrasts = contrast_list)
+
 os.chdir(current_directory)
 
 # Plot the contrast maps
 print('Done. \nPlotting')
 from nilearn import plotting
-contrast_names = zip(*conestimate.inputs['contrasts'])[0]
+contrast_names = zip(*out_conestimate.inputs['contrasts'])[0]
 for contrast_name, con_image in zip(contrast_names,
-                                    conestimate.outputs.con_images):
-    plotting.plot_stat_map(con_image, threshold=3., title=contrast_name)
+                                    out_conestimate.outputs.con_images):
+    plotting.plot_stat_map(con_image, threshold=5., title=contrast_name,
+                           bg_img=preprocessed_heroes['mean func'][0])
 plotting.show()
