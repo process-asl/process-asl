@@ -1,3 +1,11 @@
+"""
+==================
+Design matrix demo
+==================
+
+This example plots perfusion regressors and design matrix including them.
+"""
+
 # Give the paths to the 4D ASL and anatomical images and paradigm
 import os
 from procasl import datasets

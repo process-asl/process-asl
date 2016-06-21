@@ -1,4 +1,12 @@
-# Give the paths to the 4D ASL and anatomical images and paradigm
+"""
+====================
+First level pipeline
+====================
+
+This example is a basic first level pipeline for one subject.
+Contrast maps are plotted for visual condition and motor audio left vs right.
+"""
+# Give the paths to the preprocessed functional ASL images and paradigm
 import os
 from procasl import datasets
 subjects = (2,)
