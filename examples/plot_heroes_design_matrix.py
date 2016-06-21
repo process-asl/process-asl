@@ -60,12 +60,10 @@ if os.path.isfile(spm_mat):
     os.remove(spm_mat)  # design crashes if existant SPM.mat
 
 level1design = Level1Design(bases={'hrf': {'derivs': [0, 0]}},
-                            perfusion_bases={'hrf': {'derivs': [0, 0]}},
+                            perfusion_bases='bases',
                             timing_units='secs',
                             interscan_interval=tr,
                             model_serial_correlations='AR(1)')
-
-
 level1design.inputs.mask_image = compute_brain_mask(
     mean_func_file, frac=.2)  # Compute cut neck mask
 level1design.inputs.session_info = out_modelspec.outputs.session_info
@@ -83,8 +81,8 @@ regressor_names = spm_mat_struct.xX.name
 import matplotlib.pyplot as plt
 n_conditions = len(conditions)
 for regressor, regressor_name in zip(
-        design_matrix.T[n_conditions + 1:n_conditions + 4],
-        regressor_names[n_conditions + 1:n_conditions + 4]):
+        design_matrix.T[n_conditions + 1:2 * n_conditions + 1],
+        regressor_names[n_conditions + 1:2 * n_conditions + 1]):
     plt.plot(regressor, label=regressor_name)
 plt.legend()
 
