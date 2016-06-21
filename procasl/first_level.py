@@ -1,11 +1,13 @@
+import os
 import numpy as np
 from nistats.design_matrix import compute_regressor
 from nistats import experimental_paradigm
 from nipype.interfaces import spm
-from nipype.interfaces.base import BaseInterface, \
-    BaseInterfaceInputSpec, traits, File, TraitedSpec, Directory
-from nipype.utils.filemanip import split_filename
-from nipype.interfaces.base import InputMultiPath, OutputMultiPath
+from nipype.interfaces.base import (BaseInterface,
+    BaseInterfaceInputSpec, traits, File, TraitedSpec, Directory, isdefined)
+from nipype.interfaces.spm.base import scans_for_fnames
+from nipype.utils.filemanip import filename_to_list
+import nibabel
 
 
 def _get_perfusion_baseline_regressor(n_frames):
@@ -102,7 +104,7 @@ class Level1DesignInputSpec(BaseInterfaceInputSpec):
     perfusion_bases = traits.Dict(
         traits.Enum('hrf', 'physio'),
         field='perfusion bases', desc="""
-            dict {'name':{'basesparam1':val,...}}
+            dict {'name':{'perfusion_basesparam1':val,...}} (opt)
             name : string
                 Name of basis function (hrf, physio)
         {'hrf', 'physio'}
@@ -159,6 +161,30 @@ class Level1Design(BaseInterface):
     """
     input_spec = Level1DesignInputSpec
     output_spec = Level1DesignOutputSpec
+    _jobtype = 'stats'
+    _jobname = 'fmri_spec'
+
+    def _format_arg(self, opt, spec, val):
+        """Convert input to appropriate format for spm
+        """
+        if opt in ['spm_mat_dir', 'mask_image']:
+            return np.array([str(val)], dtype=object)
+        if opt in ['session_info']:  #, 'factor_info']:
+            if isinstance(val, dict):
+                return [val]
+            else:
+                return val
+        return super(Level1Design, self)._format_arg(opt, spec, val)
+
+    def _parse_inputs(self):
+        """validate spm realign options if set to None ignore
+        """
+        einputs = super(Level1Design, self)._parse_inputs(skip=('mask_threshold'))
+        for sessinfo in einputs[0]['sess']:
+            sessinfo['scans'] = scans_for_fnames(filename_to_list(sessinfo['scans']), keep4d=False)
+        if not isdefined(self.inputs.spm_mat_dir):
+            einputs[0]['dir'] = np.array([str(os.getcwd())], dtype=object)
+        return einputs
 
     def _run_interface(self, runtime):
         # Set the design parameters
@@ -172,7 +198,6 @@ class Level1Design(BaseInterface):
         level1design.inputs.session_info = self.inputs.session_info
         level1design.inputs.factor_info = self.inputs.factor_info
         level1design.inputs.bases = self.inputs.bases
-        level1design.inputs.perfusion_bases = self.inputs.perfusion_bases
         level1design.inputs.volterra_expansion_order = \
             self.inputs.volterra_expansion_order
         level1design.inputs.global_intensity_normalization = \
@@ -182,24 +207,36 @@ class Level1Design(BaseInterface):
         level1design.inputs.model_serial_correlations = \
             self.inputs.model_serial_correlations
 
-        if self.inputs.perfusion_bases:
+        if isdefined(self.inputs.perfusion_bases):
             # Compute perfusion regressors
             tr = self.inputs.interscan_interval
             # TODO: robustify (check session_info type is list of length 1)
-            n_scans = self.inputs.session_info[0]['scans'].size
+            if isinstance(self.inputs.session_info, list):
+                session_info = self.inputs.session_info[0]
+            elif isinstance(self.inputs.session_info, str):
+                session_info = self.inputs.session_info
+            else:
+                raise ValueError('session_info trait of Level1Design has type'
+                ' {0}'.format(self.inputs.session_info))
+                
+            n_scans = nibabel.load(session_info['scans']).get_data().shape[-1]
             frametimes = np.arange(0, n_scans * tr, tr)
-            if self.inputs.perfusion_bases == 'hrf':
+            if self.inputs.perfusion_bases.keys() == ['hrf']:
                 hrf_model = 'spm'
-                if self.inputs.perfusion_bases['hrf'] == [1, 0]:
+                if self.inputs.perfusion_bases['hrf']['derivs'] == [1, 0]:
                     hrf_model.extend(' + derivative')
-                elif self.inputs.perfusion_bases['hrf'] == [1, 1]:
+                elif self.inputs.perfusion_bases['hrf']['derivs'] == [1, 1]:
                     hrf_model.extend(' + derivative + dispersion')
             else:
                 raise ValueError('physio PRF not implemented yet')
-            session_info = self.inputs.session_info[0]  # robustify
             conditions = [c['name'] for c in session_info['cond']]  # robustify
             onsets = [c['onset'] for c in session_info['cond']]
             durations = [c['duration'] for c in session_info['cond']]
+            if 'amplitude' in session_info['cond'][0].keys():
+                amplitudes = [c['amplitude'] for c in session_info['cond']]
+            else:
+                amplitudes = [1 for c in session_info['cond']]
+
             perfusion_regressors, perfusion_regressor_names = \
                 compute_perfusion_regressors(conditions, onsets, durations,
                                              amplitudes, hrf_model, frametimes)
@@ -208,12 +245,12 @@ class Level1Design(BaseInterface):
                     zip(perfusion_regressors, perfusion_regressor_names)):
                 session_info['regress'].insert(
                     n, {'val': regressor, 'name': regressor_name})
-            self.inputs.session_info = [session_info]
+            level1design.inputs.session_info = [session_info]
 
         level1design.run()
         return runtime
 
-        def _make_matlab_command(self, content):
+    def _make_matlab_command(self, content):
         """validates spm options and generates job structure
         if mfile is True uses matlab .m file
         else generates a job structure and saves in .mat
