@@ -82,7 +82,7 @@ out_level1estimate = level1estimate(
 
 # Specify contrasts
 cont01 = (conditions[2],   'T', conditions, [0, 0, 1])
-cont02 = (conditions[0] + ' - ' + conditions[1], 'T', conditions, [1, -1, 0])
+cont02 = (conditions[0] + ' > ' + conditions[1], 'T', conditions, [1, -1, 0])
 contrast_list = [cont01, cont02]
 
 # Estimate contrasts
@@ -95,11 +95,11 @@ out_conestimate = conestimate(
     contrasts=contrast_list)
 os.chdir(current_directory)
 
-# Plot the contrast maps
+# Plot t-maps
 from nilearn import plotting
 contrast_names = zip(*out_conestimate.inputs['contrasts'])[0]
-for contrast_name, con_image in zip(contrast_names,
-                                    out_conestimate.outputs.con_images):
-    plotting.plot_stat_map(con_image, threshold=1., title=contrast_name,
+for contrast_name, t_image in zip(contrast_names,
+                                    out_conestimate.outputs.spmT_images):
+    plotting.plot_stat_map(t_image, threshold=5., title=contrast_name,
                            bg_img=mean_func_file)
 plotting.show()
