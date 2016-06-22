@@ -10,7 +10,7 @@ T-maps are plotted for visual condition and motor audio left vs right.
 # Give the paths to the preprocessed functional ASL images and paradigm
 import os
 from procasl import datasets
-subjects = (2,)
+subjects = (3,)
 preprocessed_heroes = datasets.load_heroes_dataset(
     subjects=subjects,
     subjects_parent_directory=os.path.expanduser(
@@ -68,6 +68,7 @@ if os.path.isfile(spm_mat):
 level1design = mem.cache(Level1Design)
 out_level1design = level1design(
     bases={'hrf': {'derivs': [0, 0]}},
+    perfusion_bases='bases',
     timing_units='secs',
     interscan_interval=tr,
     model_serial_correlations='AR(1)',
@@ -101,6 +102,6 @@ from nilearn import plotting
 contrast_names = zip(*out_conestimate.inputs['contrasts'])[0]
 for contrast_name, t_image in zip(contrast_names,
                                     out_conestimate.outputs.spmT_images):
-    plotting.plot_stat_map(t_image, threshold=5., title=contrast_name,
+    plotting.plot_stat_map(t_image, threshold=3., title=contrast_name,
                            bg_img=mean_func_file)
 plotting.show()
