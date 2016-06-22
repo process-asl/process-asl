@@ -15,12 +15,13 @@ from nilearn import plotting
 
 from procasl import preprocessing, quantification, datasets, _utils
 
+paths = ['/home/aina/Software/spm8']
 
 # Load the dataset
-subjects_parent_directory = os.path.join(os.path.expanduser('~/procasl_data'),
-                                         'heroes')
+subjects_parent_directory = os.path.join(os.path.expanduser('~/Data'),
+                                         'HEROES_DB', 'Subjects')
 heroes = datasets.load_heroes_dataset(
-    subjects=(0, 1),
+    subjects=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14),
     subjects_parent_directory=subjects_parent_directory,
     paths_patterns={'anat': 't1mri/acquisition1/anat*.nii',
                     'basal ASL': 'fMRI/acquisition1/basal_rawASL*.nii'})
@@ -32,9 +33,8 @@ for (func_file, anat_file) in zip(
     # Create a memory context
     subject_directory = os.path.relpath(anat_file, subjects_parent_directory)
     subject_directory = subject_directory.split(os.sep)[0]
-    cache_directory = os.path.join(os.path.expanduser('~/CODE/process-asl'),
-                                   'procasl_cache', 'heroes',
-                                   subject_directory)
+    cache_directory = os.path.join(os.path.expanduser('~/Data/HEROES_DB'),
+                                   'procasl_cache', subject_directory)
     if not os.path.exists(cache_directory):
         os.mkdir(cache_directory)
 
@@ -69,7 +69,8 @@ for (func_file, anat_file) in zip(
         gm_output_type=[True, False, True],
         wm_output_type=[True, False, True],
         csf_output_type=[True, False, True],
-        save_bias_corrected=True)
+        save_bias_corrected=True,
+        paths=paths)
 
     # Coregister anat to mean ASL
     coregister_anat = mem.cache(spm.Coregister)
@@ -79,7 +80,8 @@ for (func_file, anat_file) in zip(
         apply_to_files=[out_segment.outputs.native_gm_image,
                         out_segment.outputs.native_wm_image],
         write_interp=3,
-        jobtype='estwrite')
+        jobtype='estwrite',
+        paths=paths)
 
     # Get M0
     get_m0 = mem.cache(preprocessing.GetFirstScan)
@@ -91,13 +93,15 @@ for (func_file, anat_file) in zip(
         target=out_average.outputs.mean_image,
         source=out_get_m0.outputs.m0_file,
         write_interp=3,
-        jobtype='estwrite')
+        jobtype='estwrite',
+        paths=paths)
 
     # Smooth M0
     smooth_m0 = mem.cache(spm.Smooth)
     out_smooth_m0 = smooth_m0(
         in_files=out_coregister_m0.outputs.coregistered_source,
-        fwhm=[5., 5., 5.])
+        fwhm=[5., 5., 5.],
+        paths=paths)
 
     # Compute perfusion
     n_scans = preprocessing.get_scans_number(
@@ -129,7 +133,8 @@ for (func_file, anat_file) in zip(
                         brain_mask_file],
         write_voxel_sizes=_utils.get_voxel_dims(func_file),
         write_interp=2,
-        jobtype='write')
+        jobtype='write',
+        paths=paths)
 
     # Mask CBF map with brain mask
     cbf_map = preprocessing.apply_mask(
