@@ -1,22 +1,14 @@
 """
-==========================
-Multiple subjects pipeline
-==========================
+=========
+Group CBF
+=========
 
-A basic multiple subjects pipeline for ASL. CBF maps are normalized to
-the reference MNI template.
+A basic multiple subjects pipeline for basal ASL. CBF maps are normalized to
+the reference MNI template and averaged.
 """
-import os
-import matplotlib.pylab as plt
-
-import nipype.interfaces.spm as spm
-from nipype.caching import Memory
-from nilearn import plotting
-
-from procasl import preprocessing, quantification, datasets, _utils
-
-
 # Load the dataset
+import os
+from procasl import datasets
 subjects_parent_directory = os.path.join(os.path.expanduser('~/procasl_data'),
                                          'heroes')
 heroes = datasets.load_heroes_dataset(
@@ -24,9 +16,13 @@ heroes = datasets.load_heroes_dataset(
     subjects_parent_directory=subjects_parent_directory,
     paths_patterns={'anat': 't1mri/acquisition1/anat*.nii',
                     'basal ASL': 'fMRI/acquisition1/basal_rawASL*.nii'})
-current_directory = os.getcwd()
 
 # Loop over subjects
+import nipype.interfaces.spm as spm
+from nipype.caching import Memory
+from procasl import preprocessing, quantification, _utils
+current_directory = os.getcwd()
+cbf_maps = []
 for (func_file, anat_file) in zip(
         heroes['basal ASL'], heroes['anat']):
     # Create a memory context
@@ -102,12 +98,10 @@ for (func_file, anat_file) in zip(
     # Compute perfusion
     n_scans = preprocessing.get_scans_number(
         out_realign.outputs.realigned_files)
-    ctl_scans = range(1, n_scans, 2)
-    tag_scans = range(0, n_scans, 2)
     perfusion_file = quantification.compute_perfusion(
         out_realign.outputs.realigned_files,
-        ctl_scans=ctl_scans,
-        tag_scans=tag_scans)
+        ctl_scans=range(1, n_scans, 2),
+        tag_scans=range(0, n_scans, 2))
 
     # Compute CBF
     quantify = mem.cache(quantification.QuantifyCBF)
@@ -120,6 +114,8 @@ for (func_file, anat_file) in zip(
     # Compute brain mask
     brain_mask_file = preprocessing.compute_brain_mask(
         out_coregister_anat.outputs.coregistered_source, frac=.2)
+    brain_mask_file = preprocessing.compute_brain_mask(
+        out_average.outputs.mean_image, frac=.5)
 
     # Normalize CBF
     normalize = mem.cache(spm.Normalize)
@@ -135,12 +131,12 @@ for (func_file, anat_file) in zip(
     cbf_map = preprocessing.apply_mask(
         out_normalize.outputs.normalized_files[0],
         out_normalize.outputs.normalized_files[1])
+    cbf_maps.append(cbf_map)
 
-    # Plot CBF map on top of MNI template
-    plotting.plot_stat_map(
-        cbf_map,
-        bg_img='/usr/share/fsl/5.0/data/standard/MNI152_T1_2mm.nii.gz',
-        threshold=.1, vmax=150.,
-        display_mode='z')
-    plt.show()
 os.chdir(current_directory)
+
+# Plot the mean CBF map on top of MNI template
+from nilearn import image, plotting
+plotting.plot_stat_map(
+    image.mean_img(cbf_maps), bg_img=None, vmax=150., black_bg=True)
+plotting.show()

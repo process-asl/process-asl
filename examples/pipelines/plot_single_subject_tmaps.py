@@ -1,10 +1,11 @@
 """
-====================
-First level pipeline
-====================
+=====================
+Single subject t-maps
+=====================
 
-This example is a basic first level pipeline for one subject.
-Contrast maps are plotted for visual condition and motor audio left vs right.
+This example is a basic first level pipeline for functinal ASL.
+Conditions include a visual task and 2 motor-audio tasks.
+T-maps are plotted for visual condition and motor audio left vs right.
 """
 # Give the paths to the preprocessed functional ASL images and paradigm
 import os
@@ -81,8 +82,8 @@ out_level1estimate = level1estimate(
     spm_mat_file=out_level1design.outputs.spm_mat_file)
 
 # Specify contrasts
-cont01 = (conditions[2],   'T', conditions, [0, 0, 1])
-cont02 = (conditions[0] + ' > ' + conditions[1], 'T', conditions, [1, -1, 0])
+cont01 = (conditions[0] + ' > ' + conditions[1], 'T', conditions, [1, -1, 0])
+cont02 = (conditions[2],   'T', conditions, [0, 0, 1])
 contrast_list = [cont01, cont02]
 
 # Estimate contrasts

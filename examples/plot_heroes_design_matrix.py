@@ -85,25 +85,26 @@ spm_mat_struct = loadmat(out_level1design.outputs.spm_mat_file,
 design_matrix = spm_mat_struct.xX.X
 regressor_names = spm_mat_struct.xX.name
 
-# Plot the activation perfusion regressors
-import matplotlib.pyplot as plt
-n_conditions = len(conditions)
-for regressor, regressor_name in zip(
-        design_matrix.T[n_conditions + 1:2 * n_conditions + 1],
-        regressor_names[n_conditions + 1:2 * n_conditions + 1]):
-    plt.plot(regressor, label=regressor_name)
-plt.legend()
-
 # Plot the design matrix
+import matplotlib.pyplot as plt
 from nilearn.plotting import _set_mpl_backend  # set the backend
 _set_mpl_backend
-design_matrix /= np.maximum(1.e-12,  # normalize for better visu
-                            np.sqrt(np.sum(design_matrix ** 2, 0)))
-plt.figure()
-plt.imshow(design_matrix, interpolation='nearest', aspect='auto')
+design_matrix_normalized = \
+    design_matrix / np.maximum(1.e-12, np.sqrt(np.sum(design_matrix ** 2, 0)))
+plt.imshow(design_matrix_normalized, interpolation='nearest', aspect='auto')
 plt.xlabel('regressors')
 plt.ylabel('scan number')
 plt.xticks(range(len(regressor_names)),
            regressor_names, rotation=60, ha='right')
 plt.tight_layout()
+
+# Plot the activation perfusion regressors
+n_conditions = len(conditions)
+plt.figure()
+for regressor, regressor_name in zip(
+        design_matrix.T[n_conditions + 1:2 * n_conditions + 1],
+        regressor_names[n_conditions + 1:2 * n_conditions + 1]):
+    plt.plot(regressor, label=regressor_name)
+
+plt.legend()
 plt.show()
