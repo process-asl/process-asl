@@ -1,9 +1,11 @@
 """
-====================
-One subject pipeline
-====================
+==================
+Single subject CBF
+==================
 
-A basic single subject pipeline for computing CBF from ASL data.
+A basic single subject pipeline for computing CBF from basal ASL data in native
+space.
+The computed map is compared to the basal CBF map output of the scanner.
 """
 # Give the path to the 4D ASL and anatomical images
 import os
@@ -47,10 +49,6 @@ average = mem.cache(preprocessing.Average)
 out_average = average(in_file=out_realign.outputs.realigned_files)
 
 # Segment anat
-#import os
-#spm_path = spm.Info.version()['path']
-#tissue_prob_maps = [os.path.join(spm_path, 'tpm', filename) for filename in
-#                    ['grey.nii', 'white.nii', 'csf.nii']]
 import nipype.interfaces.spm as spm
 segment = mem.cache(spm.Segment)
 out_segment = segment(
@@ -110,22 +108,18 @@ brain_mask_file = preprocessing.compute_brain_mask(
     out_coregister_anat.outputs.coregistered_source, frac=.2)
 cbf_map = preprocessing.apply_mask(out_quantify.outputs.cbf_file,
                                    brain_mask_file)
+os.chdir(current_directory)
 
 # Plot CBF map on top of anat
 import matplotlib.pylab as plt
 from nilearn import plotting
-cut_coords = (-15, 0, 15, 45, 60, 75,)
-min_cbf = 1.
-max_cbf = 150.
 for map_to_plot, title, vmax, threshold in zip(
     [cbf_map, heroes['basal CBF'][0]], ['pipeline CBF', 'scanner CBF'],
-    [max_cbf, max_cbf * 10],  # scanner CBF maps are scaled
-    [min_cbf, min_cbf * 10]):
+    [150., 1500.], [1., 10.]):  # scanner CBF maps are scaled
     plotting.plot_stat_map(
         map_to_plot,
         bg_img=out_coregister_anat.outputs.coregistered_source,
-        threshold=threshold, vmax=vmax, cut_coords=cut_coords,
+        threshold=threshold, vmax=vmax, cut_coords=(-15, 0, 15, 45, 60, 75,),
         display_mode='z', title=title)
 
 plt.show()
-os.chdir(current_directory)
