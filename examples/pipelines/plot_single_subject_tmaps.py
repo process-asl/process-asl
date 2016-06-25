@@ -83,9 +83,21 @@ out_level1estimate = level1estimate(
     spm_mat_file=out_level1design.outputs.spm_mat_file)
 
 # Specify contrasts
-cont01 = (conditions[0] + ' > ' + conditions[1], 'T', conditions, [1, -1, 0])
-cont02 = (conditions[2],   'T', conditions, [0, 0, 1])
-contrast_list = [cont01, cont02]
+from scipy.io import loadmat
+spm_mat_struct = loadmat(out_level1design.outputs.spm_mat_file,
+                         struct_as_record=False, squeeze_me=True)['SPM']
+regressor_names = spm_mat_struct.xX.name.tolist()
+cont01 = ('[BOLD] ' + regressor_names[0] + ' > ' + regressor_names[1], 'T',
+          regressor_names[:3], [1, -1, 0])
+cont02 = ('[BOLD] ' + regressor_names[2], 'T', regressor_names[:3], [0, 0, 1])
+
+# Perfusion contrasts
+cont03 = (regressor_names[3],   'T', regressor_names[3:7], [1, 0, 0, 0])
+cont04 = ('[perfusion] ' + conditions[0] + ' > ' + conditions[1], 'T',
+          regressor_names[3:7], [0, 1, -1, 0])
+cont05 = ('[perfusion] ' + conditions[2], 'T', regressor_names[3:7],
+          [0, 0, 0, 1])
+contrast_list = [cont01, cont02, cont03, cont04, cont05]
 
 # Estimate contrasts
 from nipype.interfaces.spm import EstimateContrast
@@ -94,7 +106,8 @@ out_conestimate = conestimate(
     spm_mat_file=out_level1estimate.outputs.spm_mat_file,
     beta_images=out_level1estimate.outputs.beta_images,
     residual_image=out_level1estimate.outputs.residual_image,
-    contrasts=contrast_list)
+    contrasts=contrast_list,
+    group_contrast=True)
 os.chdir(current_directory)
 
 # Plot t-maps
