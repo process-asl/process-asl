@@ -93,7 +93,7 @@ for (func_file, anat_file) in zip(
 
 os.chdir(current_directory)
 
-# Plot the mean func map
+# Plot the mean func map for the last subject
 from nilearn import plotting
 plotting.plot_epi(out_smooth.outputs.smoothed_files[1])
 plotting.show()
