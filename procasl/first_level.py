@@ -145,7 +145,7 @@ class Level1DesignInputSpec(BaseInterfaceInputSpec):
                     same as the basis function in bases
                 physio:
                     linear transformation of the basis function.
-                                     """, mandatory=False)
+                                     """, mandatory=True)
     volterra_expansion_order = traits.Enum(
         1, 2, field='volt', desc='Model interactions - yes:1, no:2')
     global_intensity_normalization = traits.Enum(
