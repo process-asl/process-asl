@@ -8,14 +8,16 @@ Thresholded t-maps are plotted for visual condition and left-right
 motor-auditory conditions, both for BOLD and perfusion regressors.
 """
 ###############
-# Data loading#
+# Data loading
 ###############
 # Give the paths to smoothed normalized functional ASL images and confounds
 import os
 from procasl import datasets
+subjects = (0, 1,)
 subjects_parent_directory = os.path.expanduser(
         '~/CODE/process-asl/procasl_cache/heroes')
 preprocessed_heroes = datasets.load_heroes_dataset(
+    subjects=subjects,
     subjects_parent_directory=subjects_parent_directory,
     paths_patterns={'motion': 'nipype_mem/procasl*Realign/*/rp*vismot1*.txt',
                     'func ASL': 'nipype_mem/*Smooth/*/swrsc*vismot1*ASL*.nii',
@@ -23,12 +25,13 @@ preprocessed_heroes = datasets.load_heroes_dataset(
 
 # Give the paths to paradigms
 heroes = datasets.load_heroes_dataset(
+    subjects=subjects,
     subjects_parent_directory=os.path.join(
         os.path.expanduser('~/procasl_data'), 'heroes'),
     paths_patterns={'paradigm': 'paradigms/acquisition1/*ASL*1b.csv'})
 
 #######################
-# First level analysis#
+# First level analysis
 #######################
 # Loop over subjects
 import numpy as np
@@ -126,14 +129,14 @@ for (func_file, mean_func_file, realignment_parameters, paradigm_file) in zip(
     con_images.append(out_conestimate.outputs.con_images)
 
 ########################
-# Second level pipeline#
+# Second level pipeline
 ########################
 contrast_names = zip(*out_conestimate.inputs['contrasts'])[0]
 from nipype.interfaces.spm import OneSampleTTestDesign
 t_maps = []
 for con_files in zip(*con_images):
     # Create one sample T-Test Design
-    con_files = con_files[:5] + con_files[7:]
+#    con_files = con_files[:5] + con_files[7:]
     onesamplettestdes = mem.cache(OneSampleTTestDesign)
     out_onesamplettestdes = onesamplettestdes(
         in_files=list(con_files))
@@ -145,13 +148,14 @@ for con_files in zip(*con_images):
         spm_mat_file=out_onesamplettestdes.outputs.spm_mat_file)
 
     # Estimate group contrast
+    contrast = ['Group', 'T', ['mean'], [1]]
     level2conestimate = mem.cache(spm.EstimateContrast)
     out_level2conestimate = level2conestimate(
         group_contrast=True,
         spm_mat_file=out_level2estimate.outputs.spm_mat_file,
         beta_images=out_level2estimate.outputs.beta_images,
         residual_image=out_level2estimate.outputs.residual_image,
-        contrasts=['Group', 'T', ['mean'], [1]])
+        contrasts=[contrast])
     t_maps.append(out_level2conestimate.outputs.spmT_images)
 
 # Plot thresholded t-maps
