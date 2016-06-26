@@ -1,17 +1,15 @@
 """
-=======================
-Second level functional
-=======================
+===================
+Second level t-maps
+===================
 
-A multiple subjects pipeline for functional ASL.
-The mean functional in standard space is plotted for the last subject.
+Second level pipeline for functional ASL.
+Thresholded t-maps are plotted for visual condition and left-right
+motor-auditory conditions, both for BOLD and perfusion regressors.
 """
-# Workaround UnicodeDecodeError: 'ascii' codec can't decode byte
-import sys  
-reload(sys)  
-sys.setdefaultencoding('utf8')
-
-
+###############
+# Data loading#
+###############
 # Give the paths to smoothed normalized functional ASL images and confounds
 import os
 from procasl import datasets
@@ -29,6 +27,9 @@ heroes = datasets.load_heroes_dataset(
         os.path.expanduser('~/procasl_data'), 'heroes'),
     paths_patterns={'paradigm': 'paradigms/acquisition1/*ASL*1b.csv'})
 
+#######################
+# First level analysis#
+#######################
 # Loop over subjects
 import numpy as np
 from scipy.io import loadmat
@@ -124,7 +125,9 @@ for (func_file, mean_func_file, realignment_parameters, paradigm_file) in zip(
 
     con_images.append(out_conestimate.outputs.con_images)
 
-# Second level pipeline
+########################
+# Second level pipeline#
+########################
 contrast_names = zip(*out_conestimate.inputs['contrasts'])[0]
 from nipype.interfaces.spm import OneSampleTTestDesign
 t_maps = []
@@ -141,18 +144,17 @@ for con_files in zip(*con_images):
         estimation_method={'Classical': 1},
         spm_mat_file=out_onesamplettestdes.outputs.spm_mat_file)
 
-    # Estimates simple group contrast
-    cont1 = ['Group', 'T', ['mean'], [1]]
+    # Estimate group contrast
     level2conestimate = mem.cache(spm.EstimateContrast)
     out_level2conestimate = level2conestimate(
         group_contrast=True,
         spm_mat_file=out_level2estimate.outputs.spm_mat_file,
         beta_images=out_level2estimate.outputs.beta_images,
         residual_image=out_level2estimate.outputs.residual_image,
-        contrasts=[cont1])
+        contrasts=['Group', 'T', ['mean'], [1]])
     t_maps.append(out_level2conestimate.outputs.spmT_images)
 
-# Plot t-maps
+# Plot thresholded t-maps
 from nilearn import plotting
 for contrast_name, t_map in zip(contrast_names, t_maps):
     plotting.plot_glass_brain(t_map, threshold=5., title=contrast_name,

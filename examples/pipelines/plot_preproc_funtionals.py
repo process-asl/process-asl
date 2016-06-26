@@ -1,9 +1,9 @@
 """
-=============================
-Multiple subjects functionals
-=============================
+=========================
+Preprocessing functionals
+=========================
 
-A multiple subjects pipeline for functional ASL.
+Standard preprocessing pipeline for functional ASL.
 The mean functional in standard space is plotted for the last subject.
 """
 # Load the dataset
