@@ -347,12 +347,13 @@ class RealignInputSpec(BaseInterfaceInputSpec):
     paths = InputMultiPath(Directory(exists=True),
                            desc='Paths to add to matlabpath')
     register_to_mean = traits.Bool(
-        True,
-        mandatory=True,
+        False,
+        mandatory=False,
         usedefault=True,
         desc='Indicate whether realignment is done to the mean image')
     correct_tagging = traits.Bool(
-        False,
+        True,
+        mandatory=False,
         usedefault=True,
         desc='True/False correct for tagging artifact by zeroing the mean'
              ' difference between control and tag.')
