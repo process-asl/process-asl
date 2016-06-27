@@ -7,17 +7,17 @@ Second level pipeline for functional ASL.
 Thresholded t-maps are plotted for visual condition and left-right
 motor-auditory conditions, both for BOLD and perfusion regressors.
 """
+
 ###############
 # Data loading
 ###############
+
 # Give the paths to smoothed normalized functional ASL images and confounds
 import os
 from procasl import datasets
-subjects = (0, 1,)
 subjects_parent_directory = os.path.expanduser(
         '~/CODE/process-asl/procasl_cache/heroes')
 preprocessed_heroes = datasets.load_heroes_dataset(
-    subjects=subjects,
     subjects_parent_directory=subjects_parent_directory,
     paths_patterns={'motion': 'nipype_mem/procasl*Realign/*/rp*vismot1*.txt',
                     'func ASL': 'nipype_mem/*Smooth/*/swrsc*vismot1*ASL*.nii',
@@ -25,7 +25,6 @@ preprocessed_heroes = datasets.load_heroes_dataset(
 
 # Give the paths to paradigms
 heroes = datasets.load_heroes_dataset(
-    subjects=subjects,
     subjects_parent_directory=os.path.join(
         os.path.expanduser('~/procasl_data'), 'heroes'),
     paths_patterns={'paradigm': 'paradigms/acquisition1/*ASL*1b.csv'})
@@ -39,7 +38,7 @@ from scipy.io import loadmat
 from nipype import caching
 from nipype.interfaces import base, spm
 from nipype.algorithms.modelgen import SpecifySPMModel
-from procasl.first_level import Level1Design
+from procasl.first_level import Level1PerfusionDesign
 from procasl.preprocessing import compute_brain_mask
 current_directory = os.getcwd()
 con_images = []
@@ -84,7 +83,7 @@ for (func_file, mean_func_file, realignment_parameters, paradigm_file) in zip(
     if os.path.isfile(spm_mat):
         os.remove(spm_mat)  # design crashes if existant SPM.mat
 
-    level1design = mem.cache(Level1Design)
+    level1design = mem.cache(Level1PerfusionDesign)
     out_level1design = level1design(
         bases={'hrf': {'derivs': [0, 0]}},
         perfusion_bases='bases',
@@ -136,7 +135,7 @@ from nipype.interfaces.spm import OneSampleTTestDesign
 t_maps = []
 for con_files in zip(*con_images):
     # Create one sample T-Test Design
-#    con_files = con_files[:5] + con_files[7:]
+    con_files = con_files[:5] + con_files[7:]
     onesamplettestdes = mem.cache(OneSampleTTestDesign)
     out_onesamplettestdes = onesamplettestdes(
         in_files=list(con_files))

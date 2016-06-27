@@ -38,7 +38,7 @@ out_rescale = rescale(in_file=out_get_tag_ctl.outputs.tag_ctl_file,
                       ss_tr=35.4, t_i_1=800., t_i_2=1800.)
 
 # Realign to first scan
-realign = mem.cache(preprocessing.Realign)
+realign = mem.cache(preprocessing.ControlTagRealign)
 out_realign = realign(
     in_file=out_rescale.outputs.rescaled_file,
     register_to_mean=False,

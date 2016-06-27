@@ -61,17 +61,17 @@ modelspec.inputs.subject_info = Bunch(conditions=conditions, onsets=onsets,
 out_modelspec = modelspec.run()
 
 # Generate an SPM design matrix
-from procasl.first_level import Level1Design
+from procasl.first_level import Level1PerfusionDesign
 from procasl.preprocessing import compute_brain_mask
 spm_mat = os.path.join(os.getcwd(), 'SPM.mat')
 if os.path.isfile(spm_mat):
     os.remove(spm_mat)  # design crashes if existant SPM.mat
 
-level1design = Level1Design(bases={'hrf': {'derivs': [0, 0]}},
-                            perfusion_bases='bases',
-                            timing_units='secs',
-                            interscan_interval=tr,
-                            model_serial_correlations='AR(1)')
+level1design = Level1PerfusionDesign(bases={'hrf': {'derivs': [0, 0]}},
+                                     perfusion_bases='bases',
+                                     timing_units='secs',
+                                     interscan_interval=tr,
+                                     model_serial_correlations='AR(1)')
 level1design.inputs.mask_image = compute_brain_mask(
     mean_func_file, frac=.2)  # Compute cut neck mask
 level1design.inputs.session_info = out_modelspec.outputs.session_info

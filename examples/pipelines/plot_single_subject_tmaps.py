@@ -59,13 +59,13 @@ out_modelspec = modelspec(
     subject_info=subject_info)
 
 # Generate an SPM design matrix
-from procasl.first_level import Level1Design
+from procasl.first_level import Level1PerfusionDesign
 from procasl.preprocessing import compute_brain_mask
 spm_mat = os.path.join(cache_directory, 'SPM.mat')
 if os.path.isfile(spm_mat):
     os.remove(spm_mat)  # design crashes if existant SPM.mat
 
-level1design = mem.cache(Level1Design)
+level1design = mem.cache(Level1PerfusionDesign)
 out_level1design = level1design(
     bases={'hrf': {'derivs': [0, 0]}},
     perfusion_bases='bases',
