@@ -12,11 +12,13 @@ from procasl import datasets
 subjects_parent_directory = os.path.join(os.path.expanduser('~/procasl_data'),
                                          'heroes')
 heroes = datasets.load_heroes_dataset(
+    subjects=(5, 6,),
     subjects_parent_directory=subjects_parent_directory,
     paths_patterns={'anat': 't1mri/acquisition1/anat*.nii',
                     'func ASL': 'fMRI/acquisition1/vismot1_rawASL*.nii'})
 
 # Loop over subjects
+import numpy as np
 import nipype.interfaces.spm as spm
 from nipype.caching import Memory
 from procasl import preprocessing, _utils
@@ -77,11 +79,12 @@ for (func_file, anat_file) in zip(
 
     # Normalize func
     normalize = mem.cache(spm.Normalize)
+    write_voxel_sizes = np.round(_utils.get_voxel_dims(func_file), 2).tolist()
     out_normalize = normalize(
         parameter_file=out_segment.outputs.transformation_mat,
         apply_to_files=[out_realign.outputs.realigned_files,
                         out_average.outputs.mean_image],
-        write_voxel_sizes=_utils.get_voxel_dims(func_file),
+        write_voxel_sizes=write_voxel_sizes,
         write_interp=2,
         jobtype='write')
 
