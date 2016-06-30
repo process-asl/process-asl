@@ -338,7 +338,7 @@ class Average(BaseInterface):
         return outputs
 
 
-class RealignInputSpec(BaseInterfaceInputSpec):
+class ControlTagRealignInputSpec(BaseInterfaceInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
@@ -347,12 +347,13 @@ class RealignInputSpec(BaseInterfaceInputSpec):
     paths = InputMultiPath(Directory(exists=True),
                            desc='Paths to add to matlabpath')
     register_to_mean = traits.Bool(
-        True,
-        mandatory=True,
+        False,
+        mandatory=False,
         usedefault=True,
         desc='Indicate whether realignment is done to the mean image')
     correct_tagging = traits.Bool(
-        False,
+        True,
+        mandatory=False,
         usedefault=True,
         desc='True/False correct for tagging artifact by zeroing the mean'
              ' difference between control and tag.')
@@ -366,7 +367,7 @@ class RealignInputSpec(BaseInterfaceInputSpec):
         desc='tag frames numbers')
 
 
-class RealignOutputSpec(TraitedSpec):
+class ControlTagRealignOutputSpec(TraitedSpec):
     realigned_files = File(exists=True,
                            desc='The resliced files')
     realignment_parameters = OutputMultiPath(
@@ -374,7 +375,7 @@ class RealignOutputSpec(TraitedSpec):
         desc='Estimated translation and rotation parameters')
 
 
-class Realign(BaseInterface):
+class ControlTagRealign(BaseInterface):
     """Realign ASL scans. Default parameters are those of the GIN
     pipeline.
 
@@ -393,8 +394,8 @@ class Realign(BaseInterface):
     out_realign = realign.run()
     print(out_realign.realigned files, out_realign.realignement_parameters)
     """
-    input_spec = RealignInputSpec
-    output_spec = RealignOutputSpec
+    input_spec = ControlTagRealignInputSpec
+    output_spec = ControlTagRealignOutputSpec
 
     def _run_interface(self, runtime):
         # Set the realignement options

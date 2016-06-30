@@ -5,7 +5,7 @@ from nipype.interfaces import spm
 from nipype.interfaces.base import (BaseInterface,
     BaseInterfaceInputSpec, traits, File, TraitedSpec, Directory, isdefined)
 from nipype.interfaces.spm.base import scans_for_fnames
-from nipype.utils.filemanip import filename_to_list
+from nipype.utils.filemanip import filename_to_list, list_to_filename
 import nibabel
 
 
@@ -99,7 +99,7 @@ def compute_perfusion_regressors(conditions, condition_names,
     return perfusions_regressors, perfusion_regressors_names
 
 
-class Level1DesignInputSpec(BaseInterfaceInputSpec):
+class Level1PerfusionDesignInputSpec(BaseInterfaceInputSpec):
     spm_mat_dir = Directory(
         exists=True, field='dir', desc='directory to store SPM.mat file (opt)')
     timing_units = traits.Enum(
@@ -145,7 +145,7 @@ class Level1DesignInputSpec(BaseInterfaceInputSpec):
                     same as the basis function in bases
                 physio:
                     linear transformation of the basis function.
-                                     """, mandatory=False)
+                                     """, mandatory=True)
     volterra_expansion_order = traits.Enum(
         1, 2, field='volt', desc='Model interactions - yes:1, no:2')
     global_intensity_normalization = traits.Enum(
@@ -164,11 +164,11 @@ class Level1DesignInputSpec(BaseInterfaceInputSpec):
               'is available in SPM12'))
 
 
-class Level1DesignOutputSpec(TraitedSpec):
+class Level1PerfusionDesignOutputSpec(TraitedSpec):
     spm_mat_file = File(exists=True, desc='SPM mat file')
 
 
-class Level1Design(BaseInterface):
+class Level1PerfusionDesign(BaseInterface):
     """Generate an SPM design matrix possibly with perfusion regressors.
     Perfusion regressors consist of
         - a baseline blood flow reflecting the presence or absence of the
@@ -182,7 +182,7 @@ class Level1Design(BaseInterface):
     Examples
     --------
 
-    >>> level1design = Level1Design()
+    >>> level1design = Level1PerfusionDesign()
     >>> level1design.inputs.timing_units = 'secs'
     >>> level1design.inputs.interscan_interval = 2.5
     >>> level1design.inputs.bases = {'hrf':{'derivs': [0,0]}}
@@ -190,8 +190,8 @@ class Level1Design(BaseInterface):
     >>> level1design.run() # doctest: +SKIP
 
     """
-    input_spec = Level1DesignInputSpec
-    output_spec = Level1DesignOutputSpec
+    input_spec = Level1PerfusionDesignInputSpec
+    output_spec = Level1PerfusionDesignOutputSpec
     _jobtype = 'stats'
     _jobname = 'fmri_spec'
 
@@ -205,12 +205,12 @@ class Level1Design(BaseInterface):
                 return [val]
             else:
                 return val
-        return super(Level1Design, self)._format_arg(opt, spec, val)
+        return super(Level1PerfusionDesign, self)._format_arg(opt, spec, val)
 
     def _parse_inputs(self):
         """validate spm realign options if set to None ignore
         """
-        einputs = super(Level1Design, self)._parse_inputs(
+        einputs = super(Level1PerfusionDesign, self)._parse_inputs(
             skip=('mask_threshold'))
         for sessinfo in einputs[0]['sess']:
             sessinfo['scans'] = scans_for_fnames(filename_to_list(
@@ -251,7 +251,7 @@ class Level1Design(BaseInterface):
             else:
                 raise ValueError('session_info trait of Level1Design has type'
                 ' {0}'.format(self.inputs.session_info))
-                
+ 
             n_scans = nibabel.load(session_info['scans']).get_data().shape[-1]
             frametimes = np.arange(0, n_scans * tr, tr)
             if perfusion_bases == 'bases':
@@ -301,7 +301,7 @@ class Level1Design(BaseInterface):
             postscript += "save SPM SPM;\n"
         else:
             postscript = None
-        return super(Level1Design, self)._make_matlab_command(content, postscript=postscript)
+        return super(Level1PerfusionDesign, self)._make_matlab_command(content, postscript=postscript)
 
     def _list_outputs(self):
         outputs = self._outputs().get()

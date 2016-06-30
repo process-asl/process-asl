@@ -25,7 +25,7 @@ os.chdir(cache_directory)
 # Realign with and without tagging correction
 from procasl import preprocessing
 import numpy as np
-realign = mem.cache(preprocessing.Realign)
+realign = mem.cache(preprocessing.ControlTagRealign)
 x_translation = {}
 for correct_tagging in [True, False]:
     out_realign = realign(in_file=raw_asl_file,

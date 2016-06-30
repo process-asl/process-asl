@@ -10,7 +10,7 @@ T-maps are plotted for visual condition and motor audio left vs right.
 # Give the paths to the preprocessed functional ASL images and paradigm
 import os
 from procasl import datasets
-subjects = (2,)
+subjects = (3,)
 preprocessed_heroes = datasets.load_heroes_dataset(
     subjects=subjects,
     subjects_parent_directory=os.path.expanduser(
@@ -59,15 +59,16 @@ out_modelspec = modelspec(
     subject_info=subject_info)
 
 # Generate an SPM design matrix
-from procasl.first_level import Level1Design
+from procasl.first_level import Level1PerfusionDesign
 from procasl.preprocessing import compute_brain_mask
 spm_mat = os.path.join(cache_directory, 'SPM.mat')
 if os.path.isfile(spm_mat):
     os.remove(spm_mat)  # design crashes if existant SPM.mat
 
-level1design = mem.cache(Level1Design)
+level1design = mem.cache(Level1PerfusionDesign)
 out_level1design = level1design(
     bases={'hrf': {'derivs': [0, 0]}},
+    perfusion_bases='bases',
     timing_units='secs',
     interscan_interval=tr,
     model_serial_correlations='AR(1)',
@@ -82,9 +83,21 @@ out_level1estimate = level1estimate(
     spm_mat_file=out_level1design.outputs.spm_mat_file)
 
 # Specify contrasts
-cont01 = (conditions[0] + ' > ' + conditions[1], 'T', conditions, [1, -1, 0])
-cont02 = (conditions[2],   'T', conditions, [0, 0, 1])
-contrast_list = [cont01, cont02]
+from scipy.io import loadmat
+spm_mat_struct = loadmat(out_level1design.outputs.spm_mat_file,
+                         struct_as_record=False, squeeze_me=True)['SPM']
+regressor_names = spm_mat_struct.xX.name.tolist()
+cont01 = ('[BOLD] ' + regressor_names[0] + ' > ' + regressor_names[1], 'T',
+          regressor_names[:3], [1, -1, 0])
+cont02 = ('[BOLD] ' + regressor_names[2], 'T', regressor_names[:3], [0, 0, 1])
+
+# Perfusion contrasts
+cont03 = (regressor_names[3],   'T', regressor_names[3:7], [1, 0, 0, 0])
+cont04 = ('[perfusion] ' + conditions[0] + ' > ' + conditions[1], 'T',
+          regressor_names[3:7], [0, 1, -1, 0])
+cont05 = ('[perfusion] ' + conditions[2], 'T', regressor_names[3:7],
+          [0, 0, 0, 1])
+contrast_list = [cont01, cont02, cont03, cont04, cont05]
 
 # Estimate contrasts
 from nipype.interfaces.spm import EstimateContrast
@@ -93,7 +106,8 @@ out_conestimate = conestimate(
     spm_mat_file=out_level1estimate.outputs.spm_mat_file,
     beta_images=out_level1estimate.outputs.beta_images,
     residual_image=out_level1estimate.outputs.residual_image,
-    contrasts=contrast_list)
+    contrasts=contrast_list,
+    group_contrast=True)
 os.chdir(current_directory)
 
 # Plot t-maps
@@ -101,6 +115,6 @@ from nilearn import plotting
 contrast_names = zip(*out_conestimate.inputs['contrasts'])[0]
 for contrast_name, t_image in zip(contrast_names,
                                     out_conestimate.outputs.spmT_images):
-    plotting.plot_stat_map(t_image, threshold=5., title=contrast_name,
+    plotting.plot_stat_map(t_image, threshold=3., title=contrast_name,
                            bg_img=mean_func_file)
 plotting.show()
