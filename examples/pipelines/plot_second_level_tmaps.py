@@ -135,7 +135,6 @@ from nipype.interfaces.spm import OneSampleTTestDesign
 t_maps = []
 for con_files in zip(*con_images):
     # Create one sample T-Test Design
-    con_files = con_files[:5] + con_files[7:]
     onesamplettestdes = mem.cache(OneSampleTTestDesign)
     out_onesamplettestdes = onesamplettestdes(
         in_files=list(con_files))

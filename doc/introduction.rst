@@ -116,6 +116,8 @@ as well as the interfaces:
 * FSL >= 4.1.0
 * SPM8/12
 
+If you want to run the tests, you need nose >= 1.2.1
+
 Interfaces configuration
 ========================
 **Configuring FSL**: On an Ubuntu system, FSL is usually installed at :: /usr/share/fsl. You need to add this location to your .bashrc file. Edit this file by running the shell command::
