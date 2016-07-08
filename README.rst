@@ -1,4 +1,12 @@
 .. -*- mode: rst -*-
+
+.. image:: https://travis-ci.org/process-asl/process-asl.svg?branch=master
+   :target: https://travis-ci.org/process-asl/process-asl
+   :alt: Build Status
+
+.. image:: https://coveralls.io/repos/github/process-asl/process-asl/badge.svg?branch=master 
+    :target: https://coveralls.io/github/process-asl/process-asl?branch=master 
+
 process-asl
 ===========
 
