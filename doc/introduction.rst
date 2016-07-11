@@ -110,6 +110,7 @@ The required dependencies to use the software are the python packages:
 * NetworkX >= 1.7
 * Enthought Traits >= 4.3
 * Dateutil >= 1.5
+* Pandas >= 0.12
 
 as well as the interfaces:
 
