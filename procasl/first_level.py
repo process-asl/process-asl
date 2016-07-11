@@ -1,12 +1,12 @@
 import os
 import numpy as np
-from nistats_hemodynamic_models import compute_regressor
 from nipype.interfaces import spm
 from nipype.interfaces.base import (BaseInterface,
     BaseInterfaceInputSpec, traits, File, TraitedSpec, Directory, isdefined)
 from nipype.interfaces.spm.base import scans_for_fnames
 from nipype.utils.filemanip import filename_to_list, list_to_filename
 import nibabel
+from procasl.externals.nistats import hemodynamic_models
 
 
 def _get_perfusion_baseline_regressor(n_frames):
@@ -73,7 +73,7 @@ def _get_perfusion_activation_regressor(condition, condition_name,
     In case of glover and spm models, the derived regressors are
     orthogonalized wrt the main one.
     """
-    computed_regressors, reg_names = compute_regressor(
+    computed_regressors, reg_names = hemodynamic_models.compute_regressor(
         condition, hrf_model, frame_times, con_id=condition_name,
         oversampling=oversampling, fir_delays=fir_delays, min_onset=min_onset)
     computed_regressors[:, 1::2] *= .5
