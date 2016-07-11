@@ -32,6 +32,7 @@ heroes = datasets.load_heroes_dataset(
 #######################
 # First level analysis
 #######################
+
 # Loop over subjects
 import numpy as np
 from scipy.io import loadmat
@@ -130,6 +131,7 @@ for (func_file, mean_func_file, realignment_parameters, paradigm_file) in zip(
 ########################
 # Second level pipeline
 ########################
+
 contrast_names = zip(*out_conestimate.inputs['contrasts'])[0]
 from nipype.interfaces.spm import OneSampleTTestDesign
 t_maps = []
@@ -161,5 +163,5 @@ from nilearn import plotting
 for contrast_name, t_map in zip(contrast_names, t_maps):
     plotting.plot_glass_brain(t_map, threshold=5., title=contrast_name,
                               colorbar=True, plot_abs=False,
-                              black_bg=True, display_mode='lyrz')
+                              black_bg=True, display_mode='yz')
 plotting.show()
