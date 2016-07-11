@@ -14,8 +14,8 @@ heroes = datasets.load_heroes_dataset(
     subjects_parent_directory=os.path.join(
         os.path.expanduser('~/procasl_data'), 'heroes'),
     paths_patterns={'anat': 't1mri/acquisition1/anat*.nii',
-                     'raw ASL': 'fMRI/acquisition1/vismot1_rawASL*.nii'})
-raw_asl_file = heroes['raw ASL'][0]
+                    'raw ASL': 'fMRI/acquisition1/vismot1_rawASL*.nii'})
+raw_anat = heroes['anat'][0]
 
 # Create a memory context
 from nipype.caching import Memory
@@ -34,15 +34,17 @@ from nipype.interfaces import spm
 coregister = mem.cache(spm.Coregister)
 out_coregister = coregister(
     target=mean_func,
-    source=heroes['anat'][0],
+    source=raw_anat,
     write_interp=3)
 
 # Check coregistration
 import matplotlib.pylab as plt
 from nilearn import plotting
-figure = plt.figure(figsize=(5, 4))
-display = plotting.plot_anat(mean_func, figure=figure, display_mode='z',
-                             cut_coords=(32,),
-                             title='anat edges on mean functional')
-display.add_edges(out_coregister.outputs.coregistered_source)
-plt.show()
+for anat, label in zip([raw_anat, out_coregister.outputs.coregistered_source],
+                       ['native', 'coregistered']):
+    figure = plt.figure(figsize=(5, 4))
+    display = plotting.plot_anat(
+        anat, figure=figure, display_mode='z', cut_coords=(-66,),
+        title=label + ' anat edges on mean functional')
+    display.add_edges(mean_func)
+plotting.show()
