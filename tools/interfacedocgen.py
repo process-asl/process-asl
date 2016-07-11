@@ -232,6 +232,8 @@ class InterfaceHelpWriter(object):
         '''
         # get the names of all classes and functions
         functions, classes = self._parse_module(uri)
+        # edit only Classes documentation
+        functions = []
         workflows = []
         helper_functions = []
         for function in functions:

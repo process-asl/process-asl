@@ -114,12 +114,11 @@ os.chdir(current_directory)
 import matplotlib.pylab as plt
 from nilearn import plotting
 for map_to_plot, title, vmax, threshold in zip(
-    [cbf_map, heroes['basal CBF'][0]], ['pipeline CBF', 'scanner CBF'],
-    [150., 1500.], [1., 10.]):  # scanner CBF maps are scaled
+        [cbf_map, heroes['basal CBF'][0]], ['pipeline CBF', 'scanner CBF'],
+        [150., 1500.], [1., 10.]):  # scanner CBF maps are scaled
     plotting.plot_stat_map(
         map_to_plot,
         bg_img=out_coregister_anat.outputs.coregistered_source,
-        threshold=threshold, vmax=vmax, cut_coords=(-15, 0, 15, 45, 60, 75,),
+        threshold=threshold, vmax=vmax, (-15, 0, 15, 45, 60, 75,),
         display_mode='z', title=title)
-
 plt.show()

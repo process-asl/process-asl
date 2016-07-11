@@ -12,12 +12,12 @@ from procasl import datasets
 subjects_parent_directory = os.path.join(os.path.expanduser('~/procasl_data'),
                                          'heroes')
 heroes = datasets.load_heroes_dataset(
-    subjects=(0, 1),
     subjects_parent_directory=subjects_parent_directory,
     paths_patterns={'anat': 't1mri/acquisition1/anat*.nii',
                     'basal ASL': 'fMRI/acquisition1/basal_rawASL*.nii'})
 
 # Loop over subjects
+import shutil
 import nipype.interfaces.spm as spm
 from nipype.caching import Memory
 from procasl import preprocessing, quantification, _utils
@@ -133,10 +133,23 @@ for (func_file, anat_file) in zip(
         out_normalize.outputs.normalized_files[1])
     cbf_maps.append(cbf_map)
 
+    # Save outputs
+    filenames = [out_realign.outputs.realigned_files,
+                 out_realign.outputs.realignment_parameters,
+                 out_average.outputs.mean_image,
+                 out_coregister_anat.outputs.coregistered_source]
+    save_directory = os.path.join(os.path.expanduser(
+            '~/procasl_data/heroes_results/native'), subject_directory)
+    if not os.path.isdir(save_directory):
+        os.mkdir(save_directory)
+    for filename in filenames:
+        basename, rel_filename = os.path.split(filename)
+        save_filename = os.path.join(save_directory, rel_filename)
+        shutil.copy(filename, save_filename)
 os.chdir(current_directory)
 
 # Plot the mean CBF map on top of MNI template
 from nilearn import image, plotting
-plotting.plot_stat_map(
-    image.mean_img(cbf_maps), bg_img=None, vmax=150., black_bg=True)
+plotting.plot_stat_map(image.mean_img(cbf_maps), bg_img=None, vmax=150.,
+                       black_bg=True)
 plotting.show()
