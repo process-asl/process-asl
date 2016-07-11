@@ -3,4 +3,4 @@ def configuration(parent_package='', top_path=None):
     config = Configuration('externals', parent_package, top_path)
     config.add_subpackage('nistats')
 
-return config
+    return config
