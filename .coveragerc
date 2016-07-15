@@ -4,4 +4,4 @@ source = procasl
 include = */procasl/*
 omit =
     */procasl/externals/*
-*/setup.py
+    */setup.py
