@@ -1,0 +1,7 @@
+[run]
+branch = True
+source = procasl
+include = */procasl/*
+omit =
+    */procasl/externals/*
+*/setup.py
