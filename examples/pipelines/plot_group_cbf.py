@@ -13,6 +13,7 @@ subjects_parent_directory = os.path.join(os.path.expanduser('~/procasl_data'),
                                          'heroes')
 heroes = datasets.load_heroes_dataset(
     subjects_parent_directory=subjects_parent_directory,
+    subjects=(1, ),
     paths_patterns={'anat': 't1mri/acquisition1/anat*.nii',
                     'basal ASL': 'fMRI/acquisition1/basal_rawASL*.nii'})
 
