@@ -385,7 +385,7 @@ class ControlTagRealign(BaseInterface):
     Examples
     --------
     from procasl import preprocessing
-    realign = preprocessing.Realign
+    realign = preprocessing.Realign()
     realign.inputs.in_file = 'functional.nii'
     realign.inputs.register_to_mean = False
     realign.inputs.correct_tagging = True

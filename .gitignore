@@ -67,3 +67,6 @@ target/
 
 # Matlab files
 *.m
+
+# Cache
+procasl_cache

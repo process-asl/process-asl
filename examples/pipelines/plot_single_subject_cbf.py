@@ -119,6 +119,6 @@ for map_to_plot, title, vmax, threshold in zip(
     plotting.plot_stat_map(
         map_to_plot,
         bg_img=out_coregister_anat.outputs.coregistered_source,
-        threshold=threshold, vmax=vmax, (-15, 0, 15, 45, 60, 75,),
+        threshold=threshold, vmax=vmax, cut_coords=(-15, 0, 15, 45, 60, 75,),
         display_mode='z', title=title)
 plt.show()

@@ -12,7 +12,7 @@ from procasl import datasets
 subjects_parent_directory = os.path.join(os.path.expanduser('~/procasl_data'),
                                          'heroes')
 heroes = datasets.load_heroes_dataset(
-    subjects=(5, 6,),
+#    subjects=(0, 3,),
     subjects_parent_directory=subjects_parent_directory,
     paths_patterns={'anat': 't1mri/acquisition1/anat*.nii',
                     'func ASL': 'fMRI/acquisition1/vismot1_rawASL*.nii'})
