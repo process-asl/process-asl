@@ -299,9 +299,9 @@ sphinx_gallery_conf = {
         'nipype': 'http://nipy.org/nipype/',
         'nilearn': 'http://nilearn.github.io'},
     # path to your examples scripts
-    'examples_dirs': ['../examples', '../tutorials'],
+    'examples_dirs': ['../examples'],
     # path where to save gallery generated examples
-    'gallery_dirs': ['auto_examples', 'tutorials'],
+    'gallery_dirs': ['auto_examples'],
 
     # path to store the module using example template
     #'mod_example_dir': 'modules/generated'
