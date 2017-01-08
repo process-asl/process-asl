@@ -261,38 +261,22 @@ def fetch_kirby(subjects=range(2), sessions=[1], data_dir=None, url=None,
     m02 = [os.path.join(subject, 'KKI2009-{0:02}-ASLM0.nii'.format(i))
            for subject, i in zip(subject_ids2, ids2)]
 
-    moves = [
-        [{'move': os.path.join(subject, 'KKI2009-{0:02}.tar.bz2'.format(id))}
+    target = [
+        [os.path.join(subject, 'KKI2009-{0:02}.tar.bz2'.format(id))
          for (subject, id) in zip(subject_ids1, ids1)],
-        [{'move': os.path.join(subject, 'KKI2009-{0:02}.tar.bz2'.format(id))}
+        [os.path.join(subject, 'KKI2009-{0:02}.tar.bz2'.format(id))
          for (subject, id) in zip(subject_ids2, ids2)]
                 ]
     anat = [anat1, anat2]
     asl = [asl1, asl2]
     m0 = [m01, m02]
 
-    anat_files = [[os.path.join(sub, anat_file)
-                   for sub, anat_file in zip(subject_ids1, anat1)],
-                  [os.path.join(sub, anat_file)
-                   for sub, anat_file in zip(subject_ids2, anat2)]]
-    asl_files = [[os.path.join(sub, asl_file)
-                  for sub, asl_file in zip(subject_ids1, asl1)],
-                 [os.path.join(sub, asl_file)
-                  for sub, asl_file in zip(subject_ids2, asl2)]]
-    m0_files = [[os.path.join(sub, m0_file)
-                 for sub, m0_file in zip(subject_ids1, m01)],
-                [os.path.join(sub, anat_file)
-                 for sub, m0_file in zip(subject_ids2, m02)]]
-
     source_anat = []
     source_asl = []
     source_m0 = []
-    target_anat = []
-    target_asl = []
-    target_m0 = []
     source_archives = []
     session = []
-    opts = []
+    target_archives = []
     for i in sessions:
         if not (i in [1, 2]):
             raise ValueError('KIRBY dataset session id must be in [1, 2]')
@@ -300,43 +284,27 @@ def fetch_kirby(subjects=range(2), sessions=[1], data_dir=None, url=None,
         source_asl += [asl[i - 1][subject] for subject in subjects]
         source_m0 += [m0[i - 1][subject] for subject in subjects]
         source_archives += [archives[i - 1][subject] for subject in subjects]
-
-        opts += [moves[i - 1][subject] for subject in subjects]
-        target_anat += [anat_files[i - 1][subject] for subject in subjects]
-        target_asl += [asl_files[i - 1][subject] for subject in subjects]
-        target_m0 += [m0_files[i - 1][subject] for subject in subjects]
+        target_archives += [target[i - 1][subject] for subject in subjects]
 
         session += [i] * n_subjects
 
     # Dataset description
     fdescr = _get_dataset_descr(dataset_name)
 
-
     # Call fetch_files once per subject.
     asl = []
     m0 = []
     anat = []
-    for anat_f, asl_f, m0_f, anat_u, asl_u, m0_u, archive, opt in zip(target_anat,
-            target_asl, target_m0, source_anat, source_asl, source_m0,
-            source_archives, opts):
-
-#        m = _fetch_files( # works
-#            data_dir,
- #            [(m0_u, archive, {'uncompress': True,
- #           'move': os.path.join(os.path.dirname(m0_f), 'NYU_TRT_session3b.tar.gz')})],
- #           verbose=verbose)
-
-#        m = _fetch_files(
-#            data_dir,
-#            [(m0_u, archive, {'uncompress': True, 'move': opt['move']})],
-#            verbose=verbose)
-
+    for anat_u, asl_u, m0_u, archive, target in zip(source_anat, source_asl,
+                                                 source_m0, source_archives,
+                                                 target_archives):
         n, a, m = _fetch_files(
             data_dir,
-            [(anat_u, archive, {'uncompress': True, 'move': opt['move']}),
-             (asl_u, archive, {'uncompress': True, 'move': opt['move']}),
-             (m0_u, archive, {'uncompress': True, 'move': opt['move']})],
+            [(anat_u, archive, {'uncompress': True, 'move': target}),
+             (asl_u, archive, {'uncompress': True, 'move': target}),
+             (m0_u, archive, {'uncompress': True, 'move': target})],
             verbose=verbose)
+
         anat.append(n)
         asl.append(a)
         m0.append(m)
