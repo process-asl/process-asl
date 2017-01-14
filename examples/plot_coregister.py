@@ -6,16 +6,11 @@ Coregistration demo
 This example shows a basic coregistration step from anatomical to mean
 functional.
 """
-# Load functional ASL and anatomical images of HEROES dataset first subject
+# Load functional ASL and anatomical images of KIRBY dataset first subject
 import os
 from procasl import datasets
-heroes = datasets.load_heroes_dataset(
-    subjects=(0,),
-    subjects_parent_directory=os.path.join(
-        os.path.expanduser('~/procasl_data'), 'heroes'),
-    paths_patterns={'anat': 't1mri/acquisition1/anat*.nii',
-                    'raw ASL': 'fMRI/acquisition1/vismot1_rawASL*.nii'})
-raw_anat = heroes['anat'][0]
+kirby = datasets.fetch_kirby(subjects=[4])
+raw_anat = kirby.anat[0]
 
 # Create a memory context
 from nipype.caching import Memory
@@ -26,7 +21,7 @@ os.chdir(cache_directory)
 # Compute mean functional
 from procasl import preprocessing
 average = mem.cache(preprocessing.Average)
-out_average = average(in_file=heroes['raw ASL'][0])
+out_average = average(in_file=kirby.asl[0])
 mean_func = out_average.outputs.mean_image
 
 # Coregister anat to mean functional
