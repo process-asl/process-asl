@@ -260,4 +260,5 @@ def fetch_kirby(subjects=range(2), sessions=[1], data_dir=None, url=None,
         asl.append(a)
         m0.append(m)
 
-    return Bunch(anat=anat, asl=asl, m0=m0, description=fdescr)
+    return Bunch(anat=anat, asl=asl, m0=m0, session=session,
+                 description=fdescr)
