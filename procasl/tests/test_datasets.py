@@ -3,7 +3,6 @@ import numpy as np
 from nose import with_setup
 from nose.tools import assert_equal, assert_true, assert_not_equal
 from numpy.testing import assert_array_equal
-from rodmri.data_fetchers import mri
 
 from nilearn.datasets import utils
 from nilearn.datasets.tests import test_utils as tst
