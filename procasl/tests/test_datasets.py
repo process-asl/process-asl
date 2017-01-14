@@ -9,11 +9,11 @@ from nilearn.datasets.tests import test_utils as tst
 
 
 def setup_mock():
-    return tst.setup_mock(utils, mri)
+    return tst.setup_mock(utils, datasets)
 
 
 def teardown_mock():
-    return tst.teardown_mock(utils, mri)
+    return tst.teardown_mock(utils, datasets)
 
 
 @with_setup(setup_mock, teardown_mock)
@@ -30,14 +30,13 @@ def test_fetch_kirby():
 
     # Both sessions, 12 subjects
     tst.mock_url_request.reset()
-    kirby = mri.fetch_csd(data_dir=tst.tmpdir, sessions=[1, 2],
-                        subjects=range(12), verbose=0)
+    kirby = datasets.fetch_kirby(data_dir=tst.tmpdir, sessions=[1, 2],
+                                 subjects=range(12), verbose=0)
     # Session 1 has already been downloaded
-    assert_equal(len(tst.mock_url_request.urls), 24)
+    assert_equal(len(tst.mock_url_request.urls), 12)
     assert_equal(len(kirby.anat), 24)
     assert_equal(len(kirby.asl), 24)
     assert_equal(len(kirby.m0), 24)
     s = np.asarray(kirby.session)
     assert_true(np.all(s[:12] == 1))
     assert_true(np.all(s[12:24] == 2))
-    assert_not_equal(kirby.description, '')
