@@ -86,61 +86,6 @@ def load_heroes_dataset(
     return dataset
 
 
-def load_kirby_dataset(
-    subjects=None,
-    subjects_parent_directory='/volatile/asl_data/kirby',
-    paths_patterns={'anat': 'KKI*MPRAGE_float.nii',
-                    'basal ASL': 'KKI*ASL.nii',
-                    'basal M0': 'KKI*ASLM0.nii'}
-        ):
-    """Loads the NeuroSpin HEROES dataset.
-
-    Parameters
-    ----------
-    subjects : sequence of int or None, optional
-        ids of subjects to load, default to loading all subjects.
-
-    subjects_parent_directory : str, optional
-        Path to the dataset folder containing all subjects folders.
-
-    paths_patterns : dict, optional
-        Input dictionary. Keys are the names of the images to load, values
-        are strings specifying the unique relative pattern specifying the
-        path to these images within each subject directory.
-
-    Returns
-    -------
-    dataset : dict
-        The absolute paths to the images for all subjects. Keys are the same
-        as the files_patterns keys, values are lists of strings.
-    """
-    # Absolute paths of subjects folders
-    subjects_directories = [os.path.join(subjects_parent_directory, name)
-                            for name in
-                            sorted(os.listdir(subjects_parent_directory))
-                            if os.path.isdir(os.path.join(
-                                subjects_parent_directory, name))]
-    max_subjects = len(subjects_directories)
-    if subjects is None:
-        subjects = range(max_subjects)
-    else:
-        if max(subjects) > max_subjects:
-            raise ValueError('Got {0} subjects, you provided ids {1}'
-                             ''.format(max_subjects, str(subjects)))
-
-    subjects_directories = [subjects_directories[subject_id] for subject_id in
-                            subjects]
-
-    # Build the path list for each image type
-    dataset = {}
-    for (image_type, file_pattern) in paths_patterns.iteritems():
-        dataset[image_type] = []
-        for subject_dir in subjects_directories:
-            dataset[image_type].append(
-                _single_glob(os.path.join(subject_dir, file_pattern)))
-    return dataset
-
-
 def fetch_kirby(subjects=range(2), sessions=[1], data_dir=None, url=None,
                 resume=True, verbose=1):
     """Download and load the KIRBY multi-modal dataset.
@@ -244,27 +189,33 @@ def fetch_kirby(subjects=range(2), sessions=[1], data_dir=None, url=None,
 
     archives = [
         [url + '{0}/KKI2009-{1:02}.tar.bz2'.format(nitrc_id, id) for
-                (nitrc_id, id) in zip(nitrc_ids1, ids1)],
+         (nitrc_id, id) in zip(nitrc_ids1, ids1)],
         [url + '{0}/KKI2009-{1:02}.tar.bz2'.format(nitrc_id, id) for
-                (nitrc_id, id) in zip(nitrc_ids2, ids2)]
+         (nitrc_id, id) in zip(nitrc_ids2, ids2)]
                 ]
-    anat1 = [os.path.join(subject, 'KKI2009-{0:02}-MPRAGE.nii'.format(i))
+    anat1 = [os.path.join('session1', subject,
+                          'KKI2009-{0:02}-MPRAGE.nii'.format(i))
              for subject, i in zip(subject_ids1, ids1)]
-    anat2 = [os.path.join(subject, 'KKI2009-{0:02}-MPRAGE.nii'.format(i))
+    anat2 = [os.path.join('session2', subject,
+                          'KKI2009-{0:02}-MPRAGE.nii'.format(i))
              for subject, i in zip(subject_ids2, ids2)]
-    asl1 = [os.path.join(subject, 'KKI2009-{0:02}-ASL.nii'.format(i))
+    asl1 = [os.path.join('session1', subject,
+                         'KKI2009-{0:02}-ASL.nii'.format(i))
             for subject, i in zip(subject_ids1, ids1)]
-    asl2 = [os.path.join(subject, 'KKI2009-{0:02}-ASL.nii'.format(i))
+    asl2 = [os.path.join('session2', subject,
+                         'KKI2009-{0:02}-ASL.nii'.format(i))
             for subject, i in zip(subject_ids2, ids2)]
-    m01 = [os.path.join(subject, 'KKI2009-{0:02}-ASLM0.nii'.format(i))
+    m01 = [os.path.join('session1', subject,
+                        'KKI2009-{0:02}-ASLM0.nii'.format(i))
            for subject, i in zip(subject_ids1, ids1)]
-    m02 = [os.path.join(subject, 'KKI2009-{0:02}-ASLM0.nii'.format(i))
+    m02 = [os.path.join('session2', subject,
+                        'KKI2009-{0:02}-ASLM0.nii'.format(i))
            for subject, i in zip(subject_ids2, ids2)]
 
     target = [
-        [os.path.join(subject, 'KKI2009-{0:02}.tar.bz2'.format(id))
+        [os.path.join('session1', subject, 'KKI2009-{0:02}.tar.bz2'.format(id))
          for (subject, id) in zip(subject_ids1, ids1)],
-        [os.path.join(subject, 'KKI2009-{0:02}.tar.bz2'.format(id))
+        [os.path.join('session2', subject, 'KKI2009-{0:02}.tar.bz2'.format(id))
          for (subject, id) in zip(subject_ids2, ids2)]
                 ]
     anat = [anat1, anat2]
@@ -296,8 +247,8 @@ def fetch_kirby(subjects=range(2), sessions=[1], data_dir=None, url=None,
     m0 = []
     anat = []
     for anat_u, asl_u, m0_u, archive, target in zip(source_anat, source_asl,
-                                                 source_m0, source_archives,
-                                                 target_archives):
+                                                    source_m0, source_archives,
+                                                    target_archives):
         n, a, m = _fetch_files(
             data_dir,
             [(anat_u, archive, {'uncompress': True, 'move': target}),
