@@ -5,15 +5,11 @@ Rescaling demo
 
 This example compares a volume before and after T1 correction.
 """
-# Load functional ASL image of HEROES dataset first subject
+# Load functional ASL image of KIRBY dataset first subject
 import os
 from procasl import datasets
-heroes = datasets.load_heroes_dataset(
-    subjects=(0,),
-    subjects_parent_directory=os.path.join(
-        os.path.expanduser('~/procasl_data'), 'heroes'),
-    paths_patterns={'raw ASL': 'fMRI/acquisition1/vismot1_rawASL*.nii'})
-raw_asl_file = heroes['raw ASL'][0]
+kirby = datasets.fetch_kirby(subjects=[4])
+raw_asl_file = kirby.asl[0]
 
 # Create a memory context
 from nipype.caching import Memory
