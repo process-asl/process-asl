@@ -6,8 +6,19 @@ Coregistration demo
 This example shows a basic coregistration step from anatomical to mean
 functional.
 """
-# Load functional ASL and anatomical images of KIRBY dataset first subject
+# Enable SPM
 import os
+import nipype.interfaces.spm as spm
+import nipype.interfaces.matlab as mlab
+
+try:
+    matlab_cmd = os.environ['MATLABCMD']
+except:
+    matlab_cmd = 'matlab'
+
+mlab.MatlabCommand.set_default_matlab_cmd(matlab_cmd)
+
+# Load functional ASL and anatomical images of KIRBY dataset first subject
 from procasl import datasets
 kirby = datasets.fetch_kirby(subjects=[4])
 raw_anat = kirby.anat[0]
@@ -25,7 +36,6 @@ out_average = average(in_file=kirby.asl[0])
 mean_func = out_average.outputs.mean_image
 
 # Coregister anat to mean functional
-from nipype.interfaces import spm
 coregister = mem.cache(spm.Coregister)
 out_coregister = coregister(
     target=mean_func,
