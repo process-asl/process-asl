@@ -11,6 +11,7 @@ process-asl
 
 Process-asl builds relevant **pipelines** for processing Arterial Spin Labeling data.
 For the moment, it is dedicated to pulsed ASL.
+Please swich to `heroes` branch for preprocessing dedicated to the HEROES dataset.
 
 Dependencies
 ============
