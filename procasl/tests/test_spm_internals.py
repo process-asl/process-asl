@@ -206,11 +206,10 @@ def test_spm_affine():
                                affine_from_mat)
 
 
+@with_setup(tst.setup_tmpdata, tst.teardown_tmpdata)
 def test_params_to_affine():
     # TODO: test with zooms and shears
-    eps = np.finfo(np.float).eps
-    params = np.array([.1, .5, -.6, .1, -4., 5.1,
-                       1., 1., 1., 0., 0., 0.])
+    params = [.1, .5, -.6, .1, -4., 5.1, 1., 1., 1., 0., 0., 0.]
     affine = np.eye(4)
     affine[:3, 3] = params[:3]
     pitch = np.array([[1., 0., 0.],
@@ -231,7 +230,12 @@ def test_params_to_affine():
     np.testing.assert_allclose(affine2, affine)
 
     # Test same result as spm_matrix function of spm
-#    np.testing.assert_allclose(affine, spm_matrix(params), atol=eps)
+    mat_file = os.path.join(tst.tmpdir, 'affine.mat')
+    spm_matrix = SPMMatrix().run
+    out_spm_matrix = spm_matrix(params=params, mat_file=mat_file)
+    mat_dict = loadmat(out_spm_matrix.outputs.mat_file)
+    affine_from_spm_matrix = mat_dict['matrix']
+    np.testing.assert_allclose(affine, affine_from_spm_matrix)
 
 
 def test_affine_to_params():
