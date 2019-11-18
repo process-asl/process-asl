@@ -1,8 +1,14 @@
-from math import pi, cos, sin
+import os
+from nose import with_setup
+from math import pi, cos, sin, sqrt
 
 import numpy as np
 from scipy.io import loadmat
+import nibabel
 import nipype.interfaces.matlab as matlab
+from nipype.interfaces.base import TraitedSpec, isdefined, File, traits, OutputMultiPath, InputMultiPath
+from nipype.interfaces.spm.base import SPMCommandInputSpec, SPMCommand, scans_for_fnames, scans_for_fname
+from nilearn.datasets.tests import test_utils as tst
 
 from procasl import spm_internals
 
@@ -94,6 +100,72 @@ def spm_get_space(in_file):
     mat_dict = loadmat(mat_path)
     affine = mat_dict['matrix']
     return affine
+
+
+class GetSpaceInputSpec(SPMCommandInputSpec):
+    in_file = File(
+        exists=True, mandatory=True,
+        desc="target for reading the voxel-to-world"
+    )
+    mat_file = File(mandatory=True,
+                    desc="Matlab file to save the transform to")
+
+
+class GetSpaceOutputSpec(TraitedSpec):
+    mat_file = File(exists=True, desc="Matlab file holding transform")
+
+
+class GetSpace(SPMCommand):
+    """ Uses SPM (spm_get_space) to read the affine transform and save it
+    to a matlab file
+
+    Examples
+    --------
+    >>> import nipype.interfaces.spm.utils as spmu
+    >>> get_space = spmu.GetSpace(matlab_cmd='matlab-spm8')
+    >>> get_space.inputs.in_file = 'structural.nii'
+    >>> get_space.inputs.mat = 'func_to_struct.mat'
+    >>> get_space.run() # doctest: +SKIP
+    """
+
+    input_spec = GetSpaceInputSpec
+    output_spec = GetSpaceOutputSpec
+
+    def _make_matlab_command(self, _):
+        """checks for SPM, generates script"""
+
+        script = """
+        matrix = spm_get_space('%s');
+        save('%s' , 'matrix' );
+        """ % (
+            self.inputs.in_file,
+            self.inputs.mat_file,
+        )
+        return script
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["mat_file"] = os.path.abspath(self.inputs.mat_file)
+        return outputs
+
+
+@with_setup(tst.setup_tmpdata, tst.teardown_tmpdata)
+def test_spm_affine():
+    data = np.zeros((3, 6, 3))
+    affine = np.array([[-1.7, -0.9, -1.2, 16.2 ],
+                       [-0.9, -3.1, -2.3, 4.9],
+                       [-0.2, 1.8, 3.7, -2.1],
+                       [0., 0., 0., 1]])
+    img = nibabel.Nifti1Image(data, affine=affine)
+    in_file = os.path.join(tst.tmpdir, 'anat.nii')
+    mat_file = os.path.join(tst.tmpdir, 'anat_mapping.mat')
+    img.to_filename(in_file)
+    get_space = GetSpace().run
+    out_get_space = get_space(in_file=in_file, mat_file=mat_file)
+    mat_dict = loadmat(out_get_space.outputs.mat_file)
+    affine_from_mat = mat_dict['matrix']
+    np.testing.assert_allclose(spm_internals.spm_affine(in_file),
+                               affine_from_mat)
 
 
 def test_params_to_affine():

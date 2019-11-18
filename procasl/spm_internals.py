@@ -145,5 +145,5 @@ def spm_affine(in_file):
     if np.linalg.det(rotation) < 0:
         zooms[0] *= -1
 
-    affine[:3, 3] = affine[:3, 3] - zooms * np.ones((3, ))
+    affine[:3, 3] = affine[:3, 3] - rotation.dot(np.ones((3, )))
     return affine
