@@ -78,30 +78,6 @@ def spm_imatrix(affine):
     return params
 
 
-def spm_get_space(in_file):
-    """Run the spm function spm_get_space through Matlab.
-
-    Parameters
-    ==========
-    in_file : str
-        Path to an existant nifti image.
-
-    Returns
-    =======
-    affine : numpy.ndarray of shape (4, 4)
-        The affine transformation matrix.
-    """
-    mat_path = '/tmp/space.mat'
-    mlab = matlab.MatlabCommand()
-    mlab.inputs.script = "\naddpath '/i2bm/local/spm8-6313/' \n" + \
-                         "matrix = spm_get_space(" + in_file + ");\n" + \
-                         "save('" + mat_path + "', 'matrix')"
-    mlab.run()
-    mat_dict = loadmat(mat_path)
-    affine = mat_dict['matrix']
-    return affine
-
-
 class GetSpaceInputSpec(SPMCommandInputSpec):
     in_file = File(
         exists=True, mandatory=True,
