@@ -20,7 +20,7 @@ def params_to_affine(params):
 
     Parameters
     ----------
-    params : 1D numpy.ndarray of size 6 or 12
+    params : 1D numpy.ndarray or list of length 6 or 12
         Parameters of the transform, in the following order:
         Tx, Ty, Tz, pitch, roll, yaw
         and possibly 3 zooms and 3 shears
@@ -30,6 +30,7 @@ def params_to_affine(params):
     affine : numpy.ndarray of shape (4, 4)
         The affine transformation matrix.
     """
+    params = np.array(params)
     # Check shape
     if params.shape == (6, ):
         params = np.hstack((params, [1., 1., 1., 0., 0., 0.]))
@@ -145,5 +146,5 @@ def spm_affine(in_file):
     if np.linalg.det(rotation) < 0:
         zooms[0] *= -1
 
-    affine[:3, 3] = affine[:3, 3] - zooms * np.ones((3, ))
+    affine[:3, 3] = affine[:3, 3] - rotation.dot(np.ones((3, )))
     return affine
